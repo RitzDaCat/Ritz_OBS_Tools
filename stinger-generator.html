@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OBS Stinger Transition Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/webm-writer@0.3.0/webm-writer.js"></script>
     <style>
-        /* Reset and Base Styles */
+        /* CSS styles remain the same as in previous version */
         * {
             margin: 0;
             padding: 0;
@@ -261,13 +262,110 @@
             color: #7f8c8d;
             font-size: 0.9rem;
         }
+        
+        /* Version indicator */
+        .version {
+            font-size: 0.8rem;
+            color: #fff;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        /* Debug Info */
+        .debug-info {
+            font-family: monospace;
+            font-size: 0.8rem;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .debug-toggle {
+            font-size: 0.8rem;
+            background: none;
+            border: none;
+            color: #7f8c8d;
+            cursor: pointer;
+            padding: 5px;
+            text-decoration: underline;
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            display: none;
+        }
+        
+        .loading-spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid white;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .loading-progress {
+            width: 300px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .loading-progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: white;
+            border-radius: 5px;
+            transition: width 0.2s;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Generating video...</div>
+        <div class="loading-progress">
+            <div class="loading-progress-bar" id="loadingProgressBar"></div>
+        </div>
+        <div id="loadingDetails" style="font-size: 14px; margin-top: 15px; max-width: 400px; text-align: center;">
+            Processing frames and setting proper metadata
+        </div>
+    </div>
+    
     <div class="container">
         <header>
             <h1>OBS Stinger Transition Generator</h1>
             <p>Create customized stinger transitions for OBS Studio</p>
+            <p class="version">Version 2.0 - With WebM Muxer for Perfect Metadata</p>
         </header>
 
         <main>
@@ -368,21 +466,12 @@
                         <label for="showTransitionMarker">Show Transition Point Marker</label>
                     </div>
 
-                    <!-- Format Selector -->
-                    <div class="form-group">
-                        <label for="outputFormat">Output Format:</label>
-                        <select id="outputFormat">
-                            <option value="webm">WebM (with transparency)</option>
-                            <option value="mp4">MP4 (no transparency)</option>
-                        </select>
-                    </div>
-
                     <!-- Transparent Background -->
                     <div class="form-group checkbox">
                         <input type="checkbox" id="transparentBg" checked>
                         <label for="transparentBg">Transparent Background</label>
                     </div>
-
+                    
                     <!-- Action Buttons -->
                     <div class="buttons">
                         <button type="button" id="previewBtn">Preview</button>
@@ -411,6 +500,9 @@
                     <a id="downloadLink" class="download-button">Download Transition</a>
                     <button id="newTransitionBtn">Create New Transition</button>
                 </div>
+                
+                <div id="debugInfo" class="debug-info"></div>
+                <button id="debugToggle" class="debug-toggle">Show Technical Details</button>
             </section>
         </main>
 
@@ -421,8 +513,8 @@
 
     <script>
         // OBS Stinger Transition Generator
-        // Main JavaScript functionality
-
+        // Version 2.0 - With WebM-Writer for proper metadata
+        
         // Configuration
         const CONFIG = {
             width: 1280,
@@ -430,7 +522,8 @@
             fps: 60,
             defaultDuration: 1000, // ms
             defaultHoldTime: 500,  // ms
-            defaultTransitionPoint: 50 // percent
+            defaultTransitionPoint: 50, // percent
+            debugMode: false
         };
 
         // DOM Elements
@@ -449,7 +542,6 @@
             transitionPoint: document.getElementById('transitionPoint'),
             transitionPointValue: document.getElementById('transitionPointValue'),
             showTransitionMarker: document.getElementById('showTransitionMarker'),
-            outputFormat: document.getElementById('outputFormat'),
             transparentBg: document.getElementById('transparentBg'),
             previewBtn: document.getElementById('previewBtn'),
             generateBtn: document.getElementById('generateBtn'),
@@ -461,7 +553,13 @@
             generationStatus: document.getElementById('generationStatus'),
             downloadContainer: document.getElementById('downloadContainer'),
             downloadLink: document.getElementById('downloadLink'),
-            newTransitionBtn: document.getElementById('newTransitionBtn')
+            newTransitionBtn: document.getElementById('newTransitionBtn'),
+            debugInfo: document.getElementById('debugInfo'),
+            debugToggle: document.getElementById('debugToggle'),
+            loadingOverlay: document.getElementById('loadingOverlay'),
+            loadingText: document.getElementById('loadingText'),
+            loadingProgressBar: document.getElementById('loadingProgressBar'),
+            loadingDetails: document.getElementById('loadingDetails')
         };
 
         // Global variables
@@ -471,12 +569,47 @@
         let audioBuffer = null;
         let audioSource = null;
         let audioGain = null;
-        let mediaRecorder = null;
-        let recordedChunks = [];
         let isPreviewPlaying = false;
         let startTime = 0;
         let animationFrameId = null;
         let particles = [];
+        let webmWriter = null;
+
+        // Debug log function
+        function debugLog(message) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const logEntry = `[${timestamp}] ${message}`;
+            console.log(logEntry);
+            
+            // Add to debug info panel
+            const logNode = document.createElement('div');
+            logNode.textContent = logEntry;
+            elements.debugInfo.appendChild(logNode);
+            
+            // Auto-scroll to bottom
+            elements.debugInfo.scrollTop = elements.debugInfo.scrollHeight;
+            
+            // Show in loading details if overlay is visible
+            if (elements.loadingOverlay.style.display === 'flex') {
+                elements.loadingDetails.textContent = message;
+            }
+        }
+
+        // Show/hide loading overlay
+        function showLoading(message, progress = 0) {
+            elements.loadingText.textContent = message || "Processing...";
+            elements.loadingProgressBar.style.width = `${progress}%`;
+            elements.loadingOverlay.style.display = 'flex';
+        }
+        
+        function updateLoading(message, progress) {
+            if (message) elements.loadingText.textContent = message;
+            if (progress !== undefined) elements.loadingProgressBar.style.width = `${progress}%`;
+        }
+        
+        function hideLoading() {
+            elements.loadingOverlay.style.display = 'none';
+        }
 
         // Initialize the application
         function init() {
@@ -495,6 +628,19 @@
             
             // Show initial info message
             setStatusMessage('Upload an image to get started.', 'info');
+            
+            // Check browser compatibility
+            checkBrowserCompatibility();
+            
+            debugLog('Application initialized');
+            
+            // Check for WebM Writer support
+            if (typeof WebMWriter !== 'function') {
+                setStatusMessage('WebM Writer library not loaded. Some features may not work correctly.', 'error');
+                debugLog('WebM Writer library not found');
+            } else {
+                debugLog('WebM Writer library loaded successfully');
+            }
         }
 
         // Set up event listeners for form controls
@@ -513,12 +659,30 @@
             
             // Buttons
             elements.previewBtn.addEventListener('click', previewTransition);
-            elements.generateBtn.addEventListener('click', generateVideo);
+            elements.generateBtn.addEventListener('click', generateVideoWithWebMWriter);
             elements.playPreviewBtn.addEventListener('click', togglePreviewPlayback);
             elements.newTransitionBtn.addEventListener('click', resetGenerator);
             
             // Show/hide transition marker
             elements.showTransitionMarker.addEventListener('change', updateTransitionMarker);
+            
+            // Debug toggle
+            elements.debugToggle.addEventListener('click', toggleDebugInfo);
+        }
+        
+        // Toggle debug info visibility
+        function toggleDebugInfo() {
+            CONFIG.debugMode = !CONFIG.debugMode;
+            
+            if (CONFIG.debugMode) {
+                elements.debugInfo.style.display = 'block';
+                elements.debugToggle.textContent = 'Hide Technical Details';
+                debugLog('Debug mode enabled');
+            } else {
+                elements.debugInfo.style.display = 'none';
+                elements.debugToggle.textContent = 'Show Technical Details';
+                console.log('Debug mode disabled');
+            }
         }
 
         // Update displayed values for sliders
@@ -552,12 +716,14 @@
                     uploadedImage = img;
                     drawInitialImage();
                     setStatusMessage('Image loaded successfully. Click Preview to see the transition.', 'info');
+                    debugLog(`Image loaded: ${file.name} (${img.width}x${img.height})`);
                 };
                 img.src = e.target.result;
             };
             
             reader.onerror = function() {
                 setStatusMessage('Error loading image. Please try again.', 'error');
+                debugLog(`Image load error: ${reader.error}`);
             };
             
             reader.readAsDataURL(file);
@@ -580,14 +746,17 @@
                     .then(function(buffer) {
                         audioBuffer = buffer;
                         setStatusMessage('Audio loaded successfully.', 'info');
+                        debugLog(`Audio loaded: ${file.name} (${(buffer.duration).toFixed(2)}s)`);
                     })
                     .catch(function(err) {
                         setStatusMessage('Error decoding audio file. Please try another file.', 'error');
+                        debugLog(`Audio decode error: ${err}`);
                     });
             };
             
             reader.onerror = function() {
                 setStatusMessage('Error loading audio file. Please try again.', 'error');
+                debugLog(`Audio load error: ${reader.error}`);
             };
             
             reader.readAsArrayBuffer(file);
@@ -635,6 +804,10 @@
             if (type) {
                 elements.generationStatus.classList.add(type);
             }
+            
+            if (type === 'error' || type === 'success') {
+                debugLog(`Status (${type}): ${message}`);
+            }
         }
 
         // Preview the transition
@@ -654,6 +827,8 @@
             
             // Update UI
             elements.playPreviewBtn.textContent = 'Stop Preview';
+            
+            debugLog('Preview started');
             
             // Start animation loop
             animatePreview();
@@ -687,6 +862,8 @@
                 audioSource.stop();
                 audioSource = null;
             }
+            
+            debugLog('Preview stopped');
         }
 
         // Animate preview frame by frame
@@ -739,6 +916,8 @@
                     audioSource.stop();
                     audioSource = null;
                 }
+                
+                debugLog('Preview complete');
             }
         }
 
@@ -1167,18 +1346,20 @@
             
             // Start playback
             audioSource.start(0);
+            
+            debugLog(`Playing audio at ${audioGain.gain.value * 100}% volume`);
         }
 
-        // Generate video file
-        function generateVideo() {
+        // Generate video using WebM Writer
+        function generateVideoWithWebMWriter() {
             if (!uploadedImage) {
                 setStatusMessage('Please upload an image first.', 'error');
                 return;
             }
             
-            // Check browser support
-            if (!window.MediaRecorder) {
-                setStatusMessage('Your browser does not support the MediaRecorder API. Please try a modern browser like Chrome or Firefox.', 'error');
+            // Check WebM Writer
+            if (typeof WebMWriter !== 'function') {
+                setStatusMessage('WebM Writer library not loaded. Cannot generate video with proper metadata.', 'error');
                 return;
             }
             
@@ -1186,130 +1367,79 @@
             const duration = parseInt(elements.transitionDuration.value);
             const holdTime = parseInt(elements.holdTime.value);
             const totalDuration = duration + holdTime;
-            const format = elements.outputFormat.value;
+            const totalDurationSeconds = totalDuration / 1000;
             const transitionPoint = parseInt(elements.transitionPoint.value);
             
-            // Set up MIME type based on format
-            let mimeType;
-            if (format === 'webm') {
-                mimeType = 'video/webm;codecs=vp8';
-            } else {
-                mimeType = 'video/mp4';
-            }
+            // Show loading overlay
+            showLoading('Preparing to generate video...', 5);
             
-            // Check if format is supported
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                setStatusMessage(`Your browser does not support recording ${format.toUpperCase()} video. Please try another format.`, 'error');
-                return;
-            }
-            
-            // Set up canvas stream
-            const stream = elements.previewCanvas.captureStream(CONFIG.fps);
-            
-            // Add audio track if available
-            if (audioBuffer && audioContext) {
-                const audioDestination = audioContext.createMediaStreamDestination();
-                
-                audioSource = audioContext.createBufferSource();
-                audioSource.buffer = audioBuffer;
-                
-                audioGain = audioContext.createGain();
-                audioGain.gain.value = parseInt(elements.audioVolume.value) / 100;
-                
-                audioSource.connect(audioGain);
-                audioGain.connect(audioDestination);
-                
-                stream.addTrack(audioDestination.stream.getAudioTracks()[0]);
-            }
-            
-            // Set up media recorder
-            mediaRecorder = new MediaRecorder(stream, {
-                mimeType: mimeType,
-                videoBitsPerSecond: 5000000 // 5 Mbps
-            });
-            
-            // Clear previous recorded chunks
-            recordedChunks = [];
-            
-            // Set up event handlers
-            mediaRecorder.ondataavailable = function(e) {
-                if (e.data.size > 0) {
-                    recordedChunks.push(e.data);
-                }
-            };
-            
-            mediaRecorder.onstop = function() {
-                // Create Blob from recorded chunks
-                const blob = new Blob(recordedChunks, { type: mimeType });
-                
-                // Create download URL
-                const url = URL.createObjectURL(blob);
-                
-                // Set download link
-                elements.downloadLink.href = url;
-                elements.downloadLink.download = `transition_${transitionPoint}pt.${format}`;
-                
-                // Show download section
-                elements.downloadContainer.style.display = 'flex';
-                
-                setStatusMessage(`Transition generated successfully! Transition point is at ${transitionPoint}%.`, 'success');
-            };
-            
-            // Start recording
-            mediaRecorder.start();
-            
-            // Prepare animation
-            isPreviewPlaying = true;
-            startTime = performance.now();
-            particles = createParticles();
-            
-            // Start audio if available
-            if (audioBuffer && audioContext && audioSource) {
-                audioSource.start(0);
-            }
-            
-            // Update UI
-            setStatusMessage('Generating video... Please wait.', 'info');
+            // Disable buttons during generation
             elements.generateBtn.disabled = true;
             elements.previewBtn.disabled = true;
             
-            // Set up animation interval
-            const recordingStartTime = performance.now();
-            
-            function recordFrame() {
-                const now = performance.now();
-                const elapsed = now - recordingStartTime;
+            // Create WebM Writer with proper metadata settings
+            webmWriter = new WebMWriter({
+                quality: 0.95,   // Quality from 0 to 1
+                fileWriter: null, // Don't use FileWriter
+                transparent: elements.transparentBg.checked, // Use transparency if required
+                frameDuration: 1000 / CONFIG.fps, // Duration of each frame in ms
+                frameRate: CONFIG.fps, // Frames per second
                 
-                if (elapsed >= totalDuration) {
-                    // Recording complete
-                    mediaRecorder.stop();
-                    isPreviewPlaying = false;
-                    
-                    // Stop audio
-                    if (audioSource) {
-                        audioSource.stop();
-                        audioSource = null;
+                // Metadata - this is the key part that fills in the WebM container info
+                metadata: {
+                    duration: totalDurationSeconds, // in seconds
+                    muxingApp: 'OBS Stinger Transition Generator',
+                    writingApp: 'OBS Stinger Transition Generator 2.0',
+                    info: {
+                        title: `OBS Transition - Point at ${transitionPoint}% - Duration ${totalDurationSeconds}s`,
+                        duration: totalDurationSeconds,
+                        fps: CONFIG.fps,
+                        transitionPointMs: Math.round(totalDuration * (transitionPoint / 100)),
+                        transitionPointPercent: transitionPoint,
+                        width: CONFIG.width,
+                        height: CONFIG.height
                     }
-                    
-                    // Reset UI
-                    elements.generateBtn.disabled = false;
-                    elements.previewBtn.disabled = false;
-                    elements.previewProgress.style.width = '100%';
-                    
+                }
+            });
+            
+            debugLog(`Starting WebM Writer with duration ${totalDurationSeconds.toFixed(2)}s at ${CONFIG.fps} FPS`);
+            updateLoading(`Initializing WebM Writer with ${CONFIG.fps} FPS`, 10);
+            
+            // Render all frames of the animation
+            setTimeout(() => {
+                renderVideoFrames(duration, holdTime, transitionPoint);
+            }, 200); // Small delay to allow UI update
+        }
+        
+        // Render all frames for the video
+        function renderVideoFrames(duration, holdTime, transitionPoint) {
+            const totalDuration = duration + holdTime;
+            const totalFrames = Math.ceil(totalDuration / (1000 / CONFIG.fps));
+            let frameCount = 0;
+            
+            debugLog(`Starting frame rendering: ${totalFrames} frames required`);
+            updateLoading(`Rendering frames (0/${totalFrames})...`, 15);
+            
+            // Create particles for the animation
+            particles = createParticles();
+            
+            // Render each frame
+            const renderNextFrame = (frameIndex) => {
+                if (frameIndex >= totalFrames) {
+                    // All frames rendered, finalize video
+                    finalizeVideo(transitionPoint, totalDuration / 1000);
                     return;
                 }
                 
-                // Calculate progress (0 to 1)
+                // Calculate progress for this frame
+                const elapsedTime = frameIndex * (1000 / CONFIG.fps);
                 let progress;
-                if (elapsed <= duration) {
-                    progress = elapsed / duration;
+                
+                if (elapsedTime <= duration) {
+                    progress = elapsedTime / duration;
                 } else {
                     progress = 1; // Hold at final frame
                 }
-                
-                // Update progress bar
-                const totalProgress = Math.min(elapsed / totalDuration, 1) * 100;
-                elements.previewProgress.style.width = `${totalProgress}%`;
                 
                 // Clear canvas
                 ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
@@ -1328,12 +1458,76 @@
                     updateAndDrawParticles(progress);
                 }
                 
-                // Continue recording
-                requestAnimationFrame(recordFrame);
-            }
+                // Add this frame to WebM Writer
+                webmWriter.addFrame(elements.previewCanvas);
+                
+                // Update progress
+                frameCount++;
+                if (frameCount % 10 === 0 || frameCount === totalFrames) {
+                    const percentComplete = Math.round((frameCount / totalFrames) * 70) + 15; // Progress from 15% to 85%
+                    updateLoading(`Rendering frames (${frameCount}/${totalFrames})...`, percentComplete);
+                    debugLog(`Rendered ${frameCount}/${totalFrames} frames (${Math.round(frameCount / totalFrames * 100)}%)`);
+                }
+                
+                // Process next frame (use setTimeout to allow UI updates)
+                setTimeout(() => {
+                    renderNextFrame(frameIndex + 1);
+                }, 0);
+            };
             
-            // Start recording frames
-            recordFrame();
+            // Start rendering frames
+            renderNextFrame(0);
+        }
+        
+        // Finalize video generation
+        function finalizeVideo(transitionPoint, durationSeconds) {
+            updateLoading('Finalizing video with proper metadata...', 85);
+            debugLog('Finalizing WebM video with metadata');
+            
+            // Get the completed video with proper metadata
+            webmWriter.complete()
+                .then(function(webmBlob) {
+                    // Video generation complete
+                    updateLoading('Video generation complete!', 100);
+                    
+                    const url = URL.createObjectURL(webmBlob);
+                    const fileSizeMB = (webmBlob.size / (1024 * 1024)).toFixed(2);
+                    
+                    // Set download link with duration in filename
+                    elements.downloadLink.href = url;
+                    elements.downloadLink.download = `transition_${transitionPoint}pt_${durationSeconds.toFixed(1)}s.webm`;
+                    
+                    // Show download section
+                    elements.downloadContainer.style.display = 'flex';
+                    
+                    // Display success message with file size
+                    setStatusMessage(
+                        `Transition generated successfully! ${durationSeconds.toFixed(1)}-second video (${fileSizeMB} MB) with transition point at ${transitionPoint}%. WebM metadata properly set.`, 
+                        'success'
+                    );
+                    
+                    // Hide loading overlay after a short delay
+                    setTimeout(() => {
+                        hideLoading();
+                        
+                        // Reset UI
+                        elements.generateBtn.disabled = false;
+                        elements.previewBtn.disabled = false;
+                        elements.previewProgress.style.width = '100%';
+                        
+                        debugLog(`Video ready for download: ${durationSeconds.toFixed(1)}s, ${fileSizeMB} MB`);
+                    }, 1000);
+                })
+                .catch(function(error) {
+                    // Error finalizing video
+                    hideLoading();
+                    setStatusMessage(`Error generating video: ${error.message}`, 'error');
+                    debugLog(`Error finalizing video: ${error.message}`);
+                    
+                    // Reset UI
+                    elements.generateBtn.disabled = false;
+                    elements.previewBtn.disabled = false;
+                });
         }
 
         // Reset the generator for a new transition
@@ -1362,6 +1556,8 @@
             
             // Clear status message
             setStatusMessage('Ready to create a new transition.', 'info');
+            
+            debugLog('Generator reset');
         }
 
         // Check browser compatibility
@@ -1391,7 +1587,6 @@
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', function() {
             init();
-            checkBrowserCompatibility();
         });
     </script>
 </body>
