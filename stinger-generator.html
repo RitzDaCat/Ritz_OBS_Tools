@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Stinger Transition Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .preview-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            max-width: 100%;
+            background-color: #eee;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .controls button {
+            flex: 1;
+            min-width: 120px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OBS Stinger Transition Generator</h1>
+        
+        <div class="form-group">
+            <label for="imageInput">Upload Image:</label>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        
+        <div class="form-group">
+            <label for="effectType">Transition Effect:</label>
+            <select id="effectType">
+                <option value="reveal">Reveal (Left to Right)</option>
+                <option value="revealRight">Reveal (Right to Left)</option>
+                <option value="revealTop">Reveal (Top to Bottom)</option>
+                <option value="revealBottom">Reveal (Bottom to Top)</option>
+                <option value="diagonalWipe">Diagonal Wipe</option>
+                <option value="blinds">Venetian Blinds</option>
+                <option value="fade">Fade In</option>
+                <option value="zoom">Zoom In</option>
+                <option value="bounce">Bounce In</option>
+                <option value="pixelate">Pixelate</option>
+                <option value="blur">Blur to Clear</option>
+                <option value="grayscale">Grayscale to Color</option>
+                <option value="glitch">Glitch Effect</option>
+                <option value="splitHorizontal">Split Horizontal</option>
+                <option value="splitVertical">Split Vertical</option>
+                <option value="wipe">Circular Wipe</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="duration">Duration (ms):</label>
+            <input type="number" id="duration" value="500" min="100" max="2000" step="100">
+        </div>
+        
+        <div class="form-group">
+            <label for="videoFormat">Video Format:</label>
+            <select id="videoFormat">
+                <option value="webm">WebM</option>
+                <option value="mp4">MP4</option>
+            </select>
+        </div>
+        
+        <button id="previewBtn">Preview Transition</button>
+        <button id="generateBtn">Generate Video</button>
+        
+        <div class="preview-container">
+            <canvas id="previewCanvas"></canvas>
+            <div id="progressBar" class="hidden">Generating video: <span id="progressPercentage">0</span>%</div>
+            <div id="status" class="status hidden"></div>
+            <div class="controls hidden" id="downloadControls">
+                <button id="downloadBtn">Download Video</button>
+                <button id="newTransitionBtn">Create New Transition</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for DOM to fully load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Global variables
+            let uploadedImage = null;
+            let videoBlob = null;
+            let animationFrameId = null;
+            let recordedChunks = [];
+            let mediaRecorder = null;
+            
+            // DOM Elements
+            const imageInput = document.getElementById('imageInput');
+            const effectType = document.getElementById('effectType');
+            const duration = document.getElementById('duration');
+            const videoFormat = document.getElementById('videoFormat');
+            const previewBtn = document.getElementById('previewBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const newTransitionBtn = document.getElementById('newTransitionBtn');
+            const previewCanvas = document.getElementById('previewCanvas');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercentage = document.getElementById('progressPercentage');
+            const status = document.getElementById('status');
+            const downloadControls = document.getElementById('downloadControls');
+            
+            // Canvas context
+            const ctx = previewCanvas.getContext('2d');
+            
+            // Set initial canvas size
+            previewCanvas.width = 1280;
+            previewCanvas.height = 720;
+            
+            // Event listeners
+            imageInput.addEventListener('change', handleImageUpload);
+            previewBtn.addEventListener('click', previewTransition);
+            generateBtn.addEventListener('click', generateVideo);
+            downloadBtn.addEventListener('click', downloadVideo);
+            newTransitionBtn.addEventListener('click', resetTool);
+            
+            // Handle image upload
+            function handleImageUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        uploadedImage = img;
+                        // Draw the image centered on canvas
+                        drawImageOnCanvas(uploadedImage, 1);
+                        previewBtn.disabled = false;
+                        generateBtn.disabled = false;
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // Draw image on canvas with progress (0-1)
+            function drawImageOnCanvas(img, progress) {
+                // Clear the canvas
+                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // Calculate image dimensions to fit canvas while maintaining aspect ratio
+                const canvasRatio = previewCanvas.width / previewCanvas.height;
+                const imgRatio = img.width / img.height;
+                
+                let renderWidth, renderHeight, offsetX, offsetY;
+                
+                if (imgRatio > canvasRatio) {
+                    renderWidth = previewCanvas.width;
+                    renderHeight = previewCanvas.width / imgRatio;
+                    offsetX = 0;
+                    offsetY = (previewCanvas.height - renderHeight) / 2;
+                } else {
+                    renderHeight = previewCanvas.height;
+                    renderWidth = previewCanvas.height * imgRatio;
+                    offsetX = (previewCanvas.width - renderWidth) / 2;
+                    offsetY = 0;
+                }
+                
+                // Apply different effects based on selection
+                switch(effectType.value) {
+                    case 'reveal':
+                        // Left to right reveal
+                        ctx.drawImage(
+                            img, 
+                            0, 0, img.width * progress, img.height,
+                            offsetX, offsetY, renderWidth * progress, renderHeight
+                        );
+                        break;
+                        
+                    case 'revealRight':
+                        // Right to left reveal
+                        ctx.drawImage(
+                            img, 
+                            img.width * (1 - progress), 0, img.width * progress, img.height,
+                            offsetX + renderWidth * (1 - progress), offsetY, renderWidth * progress, renderHeight
+                        );
+                        break;
+                        
+                    case 'revealTop':
+                        // Top to bottom reveal
+                        ctx.drawImage(
+                            img, 
+                            0, 0, img.width, img.height * progress,
+                            offsetX, offsetY, renderWidth, renderHeight * progress
+                        );
+                        break;
+                        
+                    case 'revealBottom':
+                        // Bottom to top reveal
+                        ctx.drawImage(
+                            img, 
+                            0, img.height * (1 - progress), img.width, img.height * progress,
+                            offsetX, offsetY + renderHeight * (1 - progress), renderWidth, renderHeight * progress
+                        );
+                        break;
+                        
+                    case 'diagonalWipe':
+                        // Diagonal wipe from top-left to bottom-right
+                        ctx.save();
+                        ctx.beginPath();
+                        const diagProgress = progress * 2; // Double the progress for full coverage
+                        const diagonal = previewCanvas.width + previewCanvas.height;
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(diagonal * diagProgress, 0);
+                        ctx.lineTo(0, diagonal * diagProgress);
+                        ctx.closePath();
+                        ctx.clip();
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'blinds':
+                        // Venetian blinds effect
+                        const blindCount = 20; // Number of blinds
+                        const blindHeight = previewCanvas.height / blindCount;
+                        
+                        for (let i = 0; i < blindCount; i++) {
+                            const blindWidth = renderWidth * Math.min(1, progress * 2); // Each blind opens twice as fast
+                            const y = i * blindHeight;
+                            
+                            // Draw a strip of the image for each blind
+                            ctx.drawImage(
+                                img,
+                                0, (i * img.height) / blindCount, img.width, img.height / blindCount,
+                                offsetX, offsetY + y, blindWidth, blindHeight
+                            );
+                        }
+                        break;
+                        
+                    case 'fade':
+                        // Fade in
+                        ctx.globalAlpha = progress;
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                        ctx.globalAlpha = 1;
+                        break;
+                        
+                    case 'zoom':
+                        // Zoom in
+                        const scale = 0.5 + (progress * 0.5);
+                        const scaledWidth = renderWidth * scale;
+                        const scaledHeight = renderHeight * scale;
+                        const scaledOffsetX = offsetX + ((renderWidth - scaledWidth) / 2);
+                        const scaledOffsetY = offsetY + ((renderHeight - scaledHeight) / 2);
+                        
+                        ctx.drawImage(img, scaledOffsetX, scaledOffsetY, scaledWidth, scaledHeight);
+                        break;
+                        
+                    case 'bounce':
+                        // Bounce in effect
+                        const bounceProgress = progress < 0.8 ? 
+                                            Math.sin(progress * Math.PI * 1.25) * (1 - progress * 1.25) * 0.3 + progress :
+                                            progress;
+                        const bounceScale = 0.5 + bounceProgress;
+                        const bounceWidth = renderWidth * bounceScale;
+                        const bounceHeight = renderHeight * bounceScale;
+                        const bounceX = offsetX + ((renderWidth - bounceWidth) / 2);
+                        const bounceY = offsetY + ((renderHeight - bounceHeight) / 2);
+                        
+                        ctx.drawImage(img, bounceX, bounceY, bounceWidth, bounceHeight);
+                        break;
+                        
+                    case 'pixelate':
+                        // Pixelate effect (more pixels revealed as progress increases)
+                        const pixelSize = Math.max(1, Math.floor(20 * (1 - progress)));
+                        
+                        // Draw image first
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                        
+                        if (pixelSize > 1) {
+                            // Apply pixelation effect
+                            for (let y = 0; y < previewCanvas.height; y += pixelSize) {
+                                for (let x = 0; x < previewCanvas.width; x += pixelSize) {
+                                    // Get the pixel color at the origin
+                                    const pixelData = ctx.getImageData(x, y, 1, 1).data;
+                                    
+                                    // Fill a rectangle with that color
+                                    ctx.fillStyle = `rgba(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]}, ${pixelData[3]})`;
+                                    ctx.fillRect(x, y, pixelSize, pixelSize);
+                                }
+                            }
+                        }
+                        break;
+                        
+                    case 'blur':
+                        // Blur to clear effect
+                        ctx.filter = `blur(${Math.max(0, 20 * (1 - progress))}px)`;
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                        ctx.filter = 'none';
+                        break;
+                        
+                    case 'grayscale':
+                        // Grayscale to color effect
+                        const colorAmount = progress;
+                        ctx.filter = `grayscale(${Math.max(0, 1 - colorAmount)})`;
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                        ctx.filter = 'none';
+                        break;
+                        
+                    case 'glitch':
+                        // Glitch effect
+                        // Base image
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                        
+                        if (progress < 0.8) { // Only show glitches until near the end
+                            // Add random glitch elements
+                            const glitchCount = Math.floor((1 - progress) * 10);
+                            
+                            for (let i = 0; i < glitchCount; i++) {
+                                // Create a random glitch rectangle
+                                const rectX = Math.random() * renderWidth + offsetX;
+                                const rectY = Math.random() * renderHeight + offsetY;
+                                const rectWidth = Math.random() * (renderWidth / 4);
+                                const rectHeight = Math.random() * 20 + 5;
+                                
+                                // Get image data from a random part of the image
+                                const sourceX = Math.random() * renderWidth + offsetX;
+                                const sourceY = Math.random() * renderHeight + offsetY;
+                                
+                                try {
+                                    const imageData = ctx.getImageData(sourceX, sourceY, rectWidth, rectHeight);
+                                    // Draw the image data in a displaced position
+                                    ctx.putImageData(imageData, rectX, rectY);
+                                } catch (e) {
+                                    // Ignore any errors from out-of-bounds operations
+                                }
+                                
+                                // Add color channel offset
+                                ctx.globalCompositeOperation = 'screen';
+                                ctx.fillStyle = `rgba(255, 0, 0, ${(1 - progress) * 0.1})`;
+                                ctx.fillRect(offsetX - 5, offsetY, renderWidth + 10, renderHeight);
+                                ctx.fillStyle = `rgba(0, 0, 255, ${(1 - progress) * 0.1})`;
+                                ctx.fillRect(offsetX + 5, offsetY, renderWidth - 10, renderHeight);
+                                ctx.globalCompositeOperation = 'source-over';
+                            }
+                        }
+                        break;
+                        
+                    case 'splitHorizontal':
+                        // Split horizontal effect (from center)
+                        const gapH = (1 - progress) * renderWidth / 2;
+                        
+                        // Left half
+                        ctx.drawImage(
+                            img,
+                            0, 0, img.width / 2, img.height,
+                            offsetX - gapH, offsetY, renderWidth / 2, renderHeight
+                        );
+                        
+                        // Right half
+                        ctx.drawImage(
+                            img,
+                            img.width / 2, 0, img.width / 2, img.height,
+                            offsetX + renderWidth / 2 + gapH, offsetY, renderWidth / 2, renderHeight
+                        );
+                        break;
+                        
+                    case 'splitVertical':
+                        // Split vertical effect (from center)
+                        const gapV = (1 - progress) * renderHeight / 2;
+                        
+                        // Top half
+                        ctx.drawImage(
+                            img,
+                            0, 0, img.width, img.height / 2,
+                            offsetX, offsetY - gapV, renderWidth, renderHeight / 2
+                        );
+                        
+                        // Bottom half
+                        ctx.drawImage(
+                            img,
+                            0, img.height / 2, img.width, img.height / 2,
+                            offsetX, offsetY + renderHeight / 2 + gapV, renderWidth, renderHeight / 2
+                        );
+                        break;
+                        
+                    case 'wipe':
+                        // Circular wipe
+                        ctx.save();
+                        const radius = Math.sqrt(previewCanvas.width * previewCanvas.width + previewCanvas.height * previewCanvas.height) * progress;
+                        ctx.beginPath();
+                        ctx.arc(previewCanvas.width / 2, previewCanvas.height / 2, radius, 0, Math.PI * 2);
+                        ctx.clip();
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                        ctx.restore();
+                        break;
+                        
+                    default:
+                        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+                }
+            }
+            
+            // Preview the transition
+            function previewTransition() {
+                if (!uploadedImage) {
+                    showStatus('Please upload an image first', 'error');
+                    return;
+                }
+                
+                // Cancel any ongoing animation
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                
+                const transitionDuration = parseInt(duration.value);
+                const startTime = performance.now();
+                
+                function animatePreview(currentTime) {
+                    const elapsedTime = currentTime - startTime;
+                    let progress = Math.min(elapsedTime / transitionDuration, 1);
+                    
+                    drawImageOnCanvas(uploadedImage, progress);
+                    
+                    if (progress < 1) {
+                        animationFrameId = requestAnimationFrame(animatePreview);
+                    }
+                }
+                
+                animationFrameId = requestAnimationFrame(animatePreview);
+            }
+            
+            // Generate video
+            async function generateVideo() {
+                if (!uploadedImage) {
+                    showStatus('Please upload an image first', 'error');
+                    return;
+                }
+                
+                try {
+                    // Check if MediaRecorder is supported
+                    if (typeof MediaRecorder === 'undefined') {
+                        throw new Error('MediaRecorder not supported in this browser');
+                    }
+                    
+                    // Disable buttons during generation
+                    previewBtn.disabled = true;
+                    generateBtn.disabled = true;
+                    
+                    // Show progress bar
+                    progressBar.classList.remove('hidden');
+                    
+                    // Set up canvas for recording
+                    const transitionDuration = parseInt(duration.value);
+                    const fps = 60;
+                    const totalFrames = Math.ceil((transitionDuration / 1000) * fps);
+                    
+                    // Set up media recorder
+                    recordedChunks = [];
+                    const stream = previewCanvas.captureStream(fps);
+                    
+                    const mimeType = videoFormat.value === 'webm' ? 'video/webm' : 'video/mp4';
+                    let options = { mimeType: mimeType };
+                    
+                    try {
+                        mediaRecorder = new MediaRecorder(stream, options);
+                    } catch (e) {
+                        // Fallback to WebM if MP4 isn't supported
+                        if (videoFormat.value === 'mp4') {
+                            options = { mimeType: 'video/webm' };
+                            try {
+                                mediaRecorder = new MediaRecorder(stream, options);
+                                showStatus('MP4 not supported, falling back to WebM', 'error');
+                            } catch (e2) {
+                                throw new Error('Neither MP4 nor WebM recording is supported in this browser');
+                            }
+                        } else {
+                            throw new Error('WebM recording is not supported in this browser');
+                        }
+                    }
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            recordedChunks.push(event.data);
+                        }
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        // Create final video blob
+                        videoBlob = new Blob(recordedChunks, { type: options.mimeType });
+                        
+                        // Hide progress bar and show download button
+                        progressBar.classList.add('hidden');
+                        downloadControls.classList.remove('hidden');
+                        
+                        showStatus('Video generated successfully!', 'success');
+                    };
+                    
+                    // Start recording
+                    mediaRecorder.start();
+                    
+                    // Render each frame
+                    for (let frame = 0; frame < totalFrames; frame++) {
+                        const progress = frame / (totalFrames - 1);
+                        
+                        // Update progress bar
+                        progressPercentage.textContent = Math.round(progress * 100);
+                        
+                        // Draw the frame
+                        drawImageOnCanvas(uploadedImage, progress);
+                        
+                        // Wait for the next frame time
+                        await new Promise(resolve => setTimeout(resolve, 1000 / fps));
+                    }
+                    
+                    // Stop recording after all frames are rendered
+                    mediaRecorder.stop();
+                    
+                } catch (error) {
+                    showStatus('Error: ' + error.message, 'error');
+                    previewBtn.disabled = false;
+                    generateBtn.disabled = false;
+                    progressBar.classList.add('hidden');
+                }
+            }
+            
+            // Download the generated video
+            function downloadVideo() {
+                if (!videoBlob) {
+                    showStatus('No video has been generated yet', 'error');
+                    return;
+                }
+                
+                const url = URL.createObjectURL(videoBlob);
+                const a = document.createElement('a');
+                const extension = videoFormat.value === 'webm' ? 'webm' : 'mp4';
+                
+                a.href = url;
+                a.download = `stinger-transition.${extension}`;
+                a.click();
+                
+                URL.revokeObjectURL(url);
+            }
+            
+            // Reset the tool for a new transition
+            function resetTool() {
+                // Reset UI elements
+                downloadControls.classList.add('hidden');
+                status.classList.add('hidden');
+                
+                // Enable buttons
+                previewBtn.disabled = false;
+                generateBtn.disabled = false;
+                
+                // Clear video data
+                videoBlob = null;
+                recordedChunks = [];
+            }
+            
+            // Display status message
+            function showStatus(message, type) {
+                status.textContent = message;
+                status.className = 'status';
+                status.classList.add(type);
+                status.classList.remove('hidden');
+            }
+            
+            // Initialize the tool
+            function init() {
+                // Disable buttons until image is uploaded
+                previewBtn.disabled = true;
+                generateBtn.disabled = true;
+                
+                // Draw placeholder on canvas
+                ctx.fillStyle = '#eee';
+                ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+                ctx.fillStyle = '#999';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Upload an image to start', previewCanvas.width / 2, previewCanvas.height / 2);
+            }
+            
+            // Start initialization
+            init();
+        });
+    </script>
+</body>
+</html>
