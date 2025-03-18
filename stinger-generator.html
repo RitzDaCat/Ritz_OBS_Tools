@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OBS Stinger Transition Generator</title>
-    <script src="https://cdn.jsdelivr.net/npm/webm-writer@0.3.0/webm-writer.js"></script>
     <style>
-        /* CSS styles remain the same as in previous version */
+        /* Reset and base styles */
         * {
             margin: 0;
             padding: 0;
@@ -17,400 +16,350 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            background-color: #f5f5f5;
+            background-color: #f4f7f9;
+        }
+
+        /* Layout */
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 1rem;
         }
 
-        /* Header Styles */
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #2c3e50;
-            color: white;
-            border-radius: 8px;
-        }
-
-        header h1 {
-            margin-bottom: 10px;
-        }
-
-        /* Main Layout */
-        main {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 30px;
-        }
-
-        @media (max-width: 1000px) {
-            main {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Section Styling */
-        section {
-            background: white;
-            padding: 25px;
+        /* Panels and sections */
+        .panel {
+            background-color: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         h2 {
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
             color: #2c3e50;
+            font-size: 1.4rem;
         }
 
-        /* Form Styling */
-        .form-group {
-            margin-bottom: 15px;
+        /* Form elements */
+        .setting-group {
+            margin-bottom: 1rem;
         }
 
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 0.3rem;
             font-weight: 500;
+            color: #555;
         }
 
-        input[type="file"],
-        input[type="number"],
-        input[type="range"],
-        select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
+        input[type="file"] {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+
+        input[type="file"] + label {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
             border-radius: 4px;
-            background-color: #f9f9f9;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
 
-        input[type="color"] {
-            width: 50px;
-            height: 30px;
-            border: 1px solid #ddd;
-        }
-
-        .checkbox {
-            display: flex;
-            align-items: center;
-        }
-
-        .checkbox input {
-            margin-right: 10px;
-        }
-
-        .checkbox label {
-            margin-bottom: 0;
+        input[type="file"] + label:hover {
+            background-color: #2980b9;
         }
 
         .hint {
             font-size: 0.8rem;
-            color: #666;
-            margin-top: 2px;
+            color: #7f8c8d;
+            margin-top: 0.5rem;
         }
 
-        /* Button Styling */
-        button, .download-button {
-            background-color: #3498db;
+        select, input[type="number"], input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            background-color: #f9f9f9;
+        }
+
+        input[type="color"] {
+            height: 40px;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #95a5a6;
             color: white;
             border: none;
-            padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 1rem;
+            text-decoration: none;
             transition: background-color 0.3s;
-            font-weight: 500;
-            text-align: center;
-            display: inline-block;
         }
 
-        button:hover, .download-button:hover {
+        .btn:hover {
+            background-color: #7f8c8d;
+        }
+
+        .btn.primary {
+            background-color: #3498db;
+        }
+
+        .btn.primary:hover {
             background-color: #2980b9;
         }
 
-        #generateBtn {
+        .btn.success {
             background-color: #2ecc71;
         }
 
-        #generateBtn:hover {
+        .btn.success:hover {
             background-color: #27ae60;
         }
 
-        .buttons {
+        .actions {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        /* Preview Section */
+        .actions .btn {
+            flex: 1;
+        }
+
+        /* Preview section */
         .canvas-container {
             position: relative;
             width: 100%;
+            margin-bottom: 1rem;
             background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
                             linear-gradient(-45deg, #ccc 25%, transparent 25%),
                             linear-gradient(45deg, transparent 75%, #ccc 75%),
                             linear-gradient(-45deg, transparent 75%, #ccc 75%);
             background-size: 20px 20px;
             background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            margin-bottom: 15px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
         }
 
-        canvas {
+        #previewCanvas {
             display: block;
             width: 100%;
             height: auto;
         }
 
+        .transition-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: rgba(255, 0, 0, 0.7);
+            pointer-events: none;
+        }
+
         .preview-controls {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
+            align-items: center;
+            gap: 1rem;
         }
 
         .progress-container {
-            width: 100%;
+            flex: 1;
             height: 10px;
-            background-color: #eee;
+            background-color: #ecf0f1;
             border-radius: 5px;
             overflow: hidden;
-            margin-top: 10px;
         }
 
         .progress-bar {
             height: 100%;
             width: 0;
             background-color: #3498db;
-            border-radius: 5px;
-        }
-
-        .transition-marker {
-            position: absolute;
-            top: 0;
-            height: 100%;
-            width: 2px;
-            background-color: rgba(255, 0, 0, 0.7);
-            pointer-events: none;
+            transition: width 0.1s;
         }
 
         .status-message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 4px;
-            background-color: #f8f9fa;
-            display: none;
+            min-width: 100px;
+            text-align: right;
         }
 
-        .status-message.info {
-            display: block;
-            border-left: 3px solid #3498db;
-            background-color: #e1f0fa;
-        }
-
-        .status-message.success {
-            display: block;
-            border-left: 3px solid #2ecc71;
-            background-color: #e8f8f5;
-        }
-
-        .status-message.error {
-            display: block;
-            border-left: 3px solid #e74c3c;
-            background-color: #fdedeb;
-        }
-
-        /* Download Section */
-        .download-container {
-            margin-top: 20px;
+        /* Download section */
+        .download-actions {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
-        .download-button {
-            background-color: #9b59b6;
-            text-decoration: none;
-            padding: 12px 20px;
-            font-size: 1.1rem;
+        .download-actions .btn {
+            flex: 1;
         }
 
-        .download-button:hover {
-            background-color: #8e44ad;
-        }
-
-        #newTransitionBtn {
-            background-color: #34495e;
-        }
-
-        #newTransitionBtn:hover {
-            background-color: #2c3e50;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-        }
-        
-        /* Version indicator */
-        .version {
-            font-size: 0.8rem;
-            color: #fff;
-            opacity: 0.7;
-            margin-top: 5px;
-        }
-        
-        /* Debug Info */
-        .debug-info {
-            font-family: monospace;
-            font-size: 0.8rem;
-            background-color: #f0f0f0;
-            padding: 10px;
+        .technical-details {
+            background-color: #f8f9fa;
+            padding: 1rem;
             border-radius: 4px;
-            margin-top: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-            display: none;
+            margin-top: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
         }
-        
-        .debug-toggle {
-            font-size: 0.8rem;
-            background: none;
-            border: none;
-            color: #7f8c8d;
-            cursor: pointer;
-            padding: 5px;
-            text-decoration: underline;
-        }
-        
+
         /* Loading overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background-color: rgba(0, 0, 0, 0.7);
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            color: white;
-            display: none;
         }
-        
-        .loading-spinner {
-            border: 5px solid rgba(255, 255, 255, 0.3);
+
+        .loading-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
             border-radius: 50%;
-            border-top: 5px solid white;
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            margin: 0 auto 1rem;
         }
-        
-        .loading-text {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        
-        .loading-progress {
-            width: 300px;
-            height: 10px;
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        
-        .loading-progress-bar {
-            height: 100%;
-            width: 0%;
-            background-color: white;
-            border-radius: 5px;
-            transition: width 0.2s;
-        }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .loading-progress-container {
+            height: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: #3498db;
+            transition: width 0.3s;
+        }
+
+        /* Responsive layout */
+        @media (min-width: 768px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-areas:
+                    "input preview"
+                    "download download";
+                gap: 1.5rem;
+            }
+            
+            .input-section {
+                grid-area: input;
+            }
+            
+            .preview-section {
+                grid-area: preview;
+            }
+            
+            .download-section {
+                grid-area: download;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .actions {
+                flex-direction: column;
+            }
+        }
     </style>
+    <!-- Include fix-webm-duration library -->
+    <script src="https://cdn.jsdelivr.net/npm/fix-webm-duration@1.0.6/fix-webm-duration.min.js"></script>
 </head>
 <body>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text" id="loadingText">Generating video...</div>
-        <div class="loading-progress">
-            <div class="loading-progress-bar" id="loadingProgressBar"></div>
-        </div>
-        <div id="loadingDetails" style="font-size: 14px; margin-top: 15px; max-width: 400px; text-align: center;">
-            Processing frames and setting proper metadata
-        </div>
-    </div>
-    
-    <div class="container">
-        <header>
-            <h1>OBS Stinger Transition Generator</h1>
-            <p>Create customized stinger transitions for OBS Studio</p>
-            <p class="version">Version 2.0 - With WebM Muxer for Perfect Metadata</p>
-        </header>
+    <header>
+        <h1>OBS Stinger Transition Generator</h1>
+        <p>Create custom stinger transitions for OBS Studio directly in your browser</p>
+    </header>
 
-        <main>
+    <main>
+        <div class="container">
             <section class="input-section">
-                <h2>Transition Settings</h2>
-                <form id="transitionForm">
-                    <!-- Image Upload -->
-                    <div class="form-group">
-                        <label for="imageUpload">Upload Image:</label>
-                        <input type="file" id="imageUpload" accept="image/*" required>
-                        <p class="hint">Supports PNG with transparency</p>
+                <!-- Image Upload Area -->
+                <div class="panel">
+                    <h2>Upload Image</h2>
+                    <div class="upload-area">
+                        <input type="file" id="imageUpload" accept=".png,.jpg,.jpeg">
+                        <label for="imageUpload">Choose an image (PNG/JPG)</label>
+                        <p class="hint">Transparent PNG recommended for best results</p>
                     </div>
+                </div>
 
-                    <!-- Audio Upload -->
-                    <div class="form-group">
-                        <label for="audioUpload">Upload Audio (Optional):</label>
-                        <input type="file" id="audioUpload" accept="audio/*">
-                    </div>
-
-                    <!-- Transition Effect -->
-                    <div class="form-group">
-                        <label for="transitionEffect">Transition Effect:</label>
+                <!-- Transition Settings -->
+                <div class="panel">
+                    <h2>Transition Settings</h2>
+                    
+                    <div class="setting-group">
+                        <label for="transitionEffect">Transition Effect</label>
                         <select id="transitionEffect">
-                            <option value="leftToRight">Left to Right</option>
-                            <option value="rightToLeft">Right to Left</option>
-                            <option value="topToBottom">Top to Bottom</option>
-                            <option value="bottomToTop">Bottom to Top</option>
-                            <option value="fade">Fade In</option>
-                            <option value="zoom">Zoom In</option>
+                            <option value="left-to-right">Left to Right</option>
+                            <option value="right-to-left">Right to Left</option>
+                            <option value="top-to-bottom">Top to Bottom</option>
+                            <option value="bottom-to-top">Bottom to Top</option>
+                            <option value="fade-in">Fade In</option>
+                            <option value="zoom-in">Zoom In</option>
                             <option value="pixelate">Pixelate</option>
-                            <option value="circularWipe">Circular Wipe</option>
-                            <option value="splitHorizontal">Split Horizontal</option>
-                            <option value="splitVertical">Split Vertical</option>
+                            <option value="circular-wipe">Circular Wipe</option>
+                            <option value="horizontal-split">Horizontal Split</option>
+                            <option value="vertical-split">Vertical Split</option>
                             <option value="glitch">Glitch</option>
-                            <option value="blurToClear">Blur to Clear</option>
-                            <option value="grayscaleToColor">Grayscale to Color</option>
-                            <option value="venetianBlinds">Venetian Blinds</option>
-                            <option value="diagonalWipe">Diagonal Wipe</option>
+                            <option value="blur-to-clear">Blur to Clear</option>
+                            <option value="grayscale-to-color">Grayscale to Color</option>
+                            <option value="venetian-blinds">Venetian Blinds</option>
+                            <option value="diagonal-wipe">Diagonal Wipe</option>
                             <option value="bounce">Bounce</option>
                         </select>
                     </div>
-
-                    <!-- Particle Effects -->
-                    <div class="form-group">
-                        <label for="particleEffect">Particle Effect:</label>
+                    
+                    <div class="setting-group">
+                        <label for="particleEffect">Particle Effect</label>
                         <select id="particleEffect">
                             <option value="none">None</option>
                             <option value="confetti">Confetti</option>
@@ -420,1173 +369,1243 @@
                             <option value="stars">Stars</option>
                         </select>
                     </div>
-
-                    <!-- Particle Color -->
-                    <div class="form-group">
-                        <label for="particleColor">Particle Color:</label>
+                    
+                    <div class="setting-group" id="particleSettings" style="display: none;">
+                        <label for="particleColor">Particle Color</label>
                         <input type="color" id="particleColor" value="#ffffff">
-                    </div>
-
-                    <!-- Particle Density -->
-                    <div class="form-group">
-                        <label for="particleDensity">Particle Density:</label>
+                        
+                        <label for="particleDensity">Particle Density</label>
                         <input type="range" id="particleDensity" min="1" max="100" value="50">
-                        <span id="particleDensityValue">50</span>
-                    </div>
-
-                    <!-- Audio Volume -->
-                    <div class="form-group">
-                        <label for="audioVolume">Audio Volume:</label>
-                        <input type="range" id="audioVolume" min="0" max="100" value="100">
-                        <span id="audioVolumeValue">100%</span>
-                    </div>
-
-                    <!-- Transition Duration -->
-                    <div class="form-group">
-                        <label for="transitionDuration">Transition Duration (ms):</label>
-                        <input type="number" id="transitionDuration" min="500" max="5000" value="1000">
-                    </div>
-
-                    <!-- Hold Time -->
-                    <div class="form-group">
-                        <label for="holdTime">Hold Time at End (ms):</label>
-                        <input type="number" id="holdTime" min="0" max="3000" value="500">
-                    </div>
-
-                    <!-- Transition Point -->
-                    <div class="form-group">
-                        <label for="transitionPoint">Transition Point (%):</label>
-                        <input type="range" id="transitionPoint" min="1" max="99" value="50">
-                        <span id="transitionPointValue">50%</span>
-                    </div>
-
-                    <!-- Show Transition Marker -->
-                    <div class="form-group checkbox">
-                        <input type="checkbox" id="showTransitionMarker" checked>
-                        <label for="showTransitionMarker">Show Transition Point Marker</label>
-                    </div>
-
-                    <!-- Transparent Background -->
-                    <div class="form-group checkbox">
-                        <input type="checkbox" id="transparentBg" checked>
-                        <label for="transparentBg">Transparent Background</label>
                     </div>
                     
-                    <!-- Action Buttons -->
-                    <div class="buttons">
-                        <button type="button" id="previewBtn">Preview</button>
-                        <button type="button" id="generateBtn">Generate Video</button>
+                    <div class="setting-group">
+                        <label for="audioUpload">Audio (optional)</label>
+                        <input type="file" id="audioUpload" accept="audio/*">
+                        
+                        <label for="audioVolume">Audio Volume</label>
+                        <input type="range" id="audioVolume" min="0" max="100" value="100">
                     </div>
-                </form>
+                    
+                    <div class="setting-group">
+                        <label for="transitionDuration">Transition Duration (seconds)</label>
+                        <input type="number" id="transitionDuration" min="0.5" max="10" step="0.1" value="1.5">
+                        
+                        <label for="holdDuration">Hold Duration (seconds)</label>
+                        <input type="number" id="holdDuration" min="0" max="5" step="0.1" value="0.5">
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="transitionPoint">Transition Point (%)</label>
+                        <input type="range" id="transitionPoint" min="1" max="100" value="50">
+                        <span id="transitionPointValue">50%</span>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="frameRate">Frame Rate</label>
+                        <select id="frameRate">
+                            <option value="24">24 FPS</option>
+                            <option value="25">25 FPS</option>
+                            <option value="30" selected>30 FPS</option>
+                            <option value="50">50 FPS</option>
+                            <option value="60">60 FPS</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="transparencyToggle">Transparent Background</label>
+                        <input type="checkbox" id="transparencyToggle" checked>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="actions">
+                    <button id="previewBtn" class="btn primary">Preview Transition</button>
+                    <button id="generateBtn" class="btn success">Generate Video</button>
+                </div>
             </section>
 
             <section class="preview-section">
-                <h2>Preview</h2>
-                <div class="canvas-container" id="canvasContainer">
-                    <canvas id="previewCanvas" width="1280" height="720"></canvas>
-                    <div id="transitionMarker" class="transition-marker"></div>
-                </div>
-                
-                <div class="preview-controls">
-                    <button id="playPreviewBtn">Play Preview</button>
-                    <div class="progress-container">
-                        <div id="previewProgress" class="progress-bar"></div>
+                <div class="panel">
+                    <h2>Preview</h2>
+                    <div class="canvas-container">
+                        <canvas id="previewCanvas" width="1280" height="720"></canvas>
+                        <div id="transitionMarker" class="transition-marker"></div>
+                    </div>
+                    
+                    <div class="preview-controls">
+                        <button id="playStopBtn" class="btn">Play</button>
+                        <div class="progress-container">
+                            <div id="progressBar" class="progress-bar"></div>
+                        </div>
+                        <span id="statusMessage" class="status-message">Ready</span>
                     </div>
                 </div>
-
-                <div id="generationStatus" class="status-message"></div>
-                
-                <div id="downloadContainer" class="download-container" style="display: none;">
-                    <a id="downloadLink" class="download-button">Download Transition</a>
-                    <button id="newTransitionBtn">Create New Transition</button>
-                </div>
-                
-                <div id="debugInfo" class="debug-info"></div>
-                <button id="debugToggle" class="debug-toggle">Show Technical Details</button>
             </section>
-        </main>
 
-        <footer>
-            <p>OBS Stinger Transition Generator | Created for streaming professionals</p>
-        </footer>
+            <section class="download-section" style="display: none;">
+                <div class="panel">
+                    <h2>Download</h2>
+                    <p id="fileInfo">Size: 0 MB | Duration: 0s</p>
+                    <div class="download-actions">
+                        <a id="downloadBtn" class="btn success" download="transition.webm">Download Transition</a>
+                        <button id="newTransitionBtn" class="btn">Create New Transition</button>
+                    </div>
+                    <details>
+                        <summary>Technical Details</summary>
+                        <div id="technicalDetails" class="technical-details">
+                            <!-- Technical details will be filled by JavaScript -->
+                        </div>
+                    </details>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-progress-container">
+                <div id="loadingProgressBar" class="loading-progress-bar"></div>
+            </div>
+            <p id="loadingStatusMessage">Initializing...</p>
+        </div>
     </div>
 
     <script>
-        // OBS Stinger Transition Generator
-        // Version 2.0 - With WebM-Writer for proper metadata
-        
-        // Configuration
-        const CONFIG = {
-            width: 1280,
-            height: 720,
-            fps: 60,
-            defaultDuration: 1000, // ms
-            defaultHoldTime: 500,  // ms
-            defaultTransitionPoint: 50, // percent
-            debugMode: false
-        };
-
-        // DOM Elements
-        const elements = {
-            imageUpload: document.getElementById('imageUpload'),
-            audioUpload: document.getElementById('audioUpload'),
-            transitionEffect: document.getElementById('transitionEffect'),
-            particleEffect: document.getElementById('particleEffect'),
-            particleColor: document.getElementById('particleColor'),
-            particleDensity: document.getElementById('particleDensity'),
-            particleDensityValue: document.getElementById('particleDensityValue'),
-            audioVolume: document.getElementById('audioVolume'),
-            audioVolumeValue: document.getElementById('audioVolumeValue'),
-            transitionDuration: document.getElementById('transitionDuration'),
-            holdTime: document.getElementById('holdTime'),
-            transitionPoint: document.getElementById('transitionPoint'),
-            transitionPointValue: document.getElementById('transitionPointValue'),
-            showTransitionMarker: document.getElementById('showTransitionMarker'),
-            transparentBg: document.getElementById('transparentBg'),
-            previewBtn: document.getElementById('previewBtn'),
-            generateBtn: document.getElementById('generateBtn'),
-            previewCanvas: document.getElementById('previewCanvas'),
-            canvasContainer: document.getElementById('canvasContainer'),
-            transitionMarker: document.getElementById('transitionMarker'),
-            playPreviewBtn: document.getElementById('playPreviewBtn'),
-            previewProgress: document.getElementById('previewProgress'),
-            generationStatus: document.getElementById('generationStatus'),
-            downloadContainer: document.getElementById('downloadContainer'),
-            downloadLink: document.getElementById('downloadLink'),
-            newTransitionBtn: document.getElementById('newTransitionBtn'),
-            debugInfo: document.getElementById('debugInfo'),
-            debugToggle: document.getElementById('debugToggle'),
-            loadingOverlay: document.getElementById('loadingOverlay'),
-            loadingText: document.getElementById('loadingText'),
-            loadingProgressBar: document.getElementById('loadingProgressBar'),
-            loadingDetails: document.getElementById('loadingDetails')
-        };
-
-        // Global variables
-        let ctx = elements.previewCanvas.getContext('2d');
-        let uploadedImage = null;
-        let audioContext = null;
-        let audioBuffer = null;
-        let audioSource = null;
-        let audioGain = null;
-        let isPreviewPlaying = false;
-        let startTime = 0;
-        let animationFrameId = null;
-        let particles = [];
-        let webmWriter = null;
-
-        // Debug log function
-        function debugLog(message) {
-            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-            const logEntry = `[${timestamp}] ${message}`;
-            console.log(logEntry);
+        // Main application logic
+        document.addEventListener('DOMContentLoaded', function() {
+            // Constants and globals
+            const WIDTH = 1280;
+            const HEIGHT = 720;
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+            const transitionMarker = document.getElementById('transitionMarker');
+            const progressBar = document.getElementById('progressBar');
+            const statusMessage = document.getElementById('statusMessage');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingProgressBar = document.getElementById('loadingProgressBar');
+            const loadingStatusMessage = document.getElementById('loadingStatusMessage');
             
-            // Add to debug info panel
-            const logNode = document.createElement('div');
-            logNode.textContent = logEntry;
-            elements.debugInfo.appendChild(logNode);
+            // Global state variables
+            let sourceImage = null;
+            let audioBlob = null;
+            let audioContext = null;
+            let audioElement = null;
+            let isPlaying = false;
+            let animationFrameId = null;
+            let startTime = 0;
+            let generatedBlob = null;
+            let frames = [];
             
-            // Auto-scroll to bottom
-            elements.debugInfo.scrollTop = elements.debugInfo.scrollHeight;
+            // Initialize UI event listeners
+            initializeEventListeners();
             
-            // Show in loading details if overlay is visible
-            if (elements.loadingOverlay.style.display === 'flex') {
-                elements.loadingDetails.textContent = message;
-            }
-        }
-
-        // Show/hide loading overlay
-        function showLoading(message, progress = 0) {
-            elements.loadingText.textContent = message || "Processing...";
-            elements.loadingProgressBar.style.width = `${progress}%`;
-            elements.loadingOverlay.style.display = 'flex';
-        }
-        
-        function updateLoading(message, progress) {
-            if (message) elements.loadingText.textContent = message;
-            if (progress !== undefined) elements.loadingProgressBar.style.width = `${progress}%`;
-        }
-        
-        function hideLoading() {
-            elements.loadingOverlay.style.display = 'none';
-        }
-
-        // Initialize the application
-        function init() {
-            // Set canvas size
-            elements.previewCanvas.width = CONFIG.width;
-            elements.previewCanvas.height = CONFIG.height;
-            
-            // Set up event listeners
-            setupEventListeners();
-            
-            // Update slider values display
-            updateSliderValues();
-            
-            // Position transition marker
-            updateTransitionMarker();
-            
-            // Show initial info message
-            setStatusMessage('Upload an image to get started.', 'info');
-            
-            // Check browser compatibility
-            checkBrowserCompatibility();
-            
-            debugLog('Application initialized');
-            
-            // Check for WebM Writer support
-            if (typeof WebMWriter !== 'function') {
-                setStatusMessage('WebM Writer library not loaded. Some features may not work correctly.', 'error');
-                debugLog('WebM Writer library not found');
-            } else {
-                debugLog('WebM Writer library loaded successfully');
-            }
-        }
-
-        // Set up event listeners for form controls
-        function setupEventListeners() {
-            // File uploads
-            elements.imageUpload.addEventListener('change', handleImageUpload);
-            elements.audioUpload.addEventListener('change', handleAudioUpload);
-            
-            // Sliders
-            elements.particleDensity.addEventListener('input', updateSliderValues);
-            elements.audioVolume.addEventListener('input', updateSliderValues);
-            elements.transitionPoint.addEventListener('input', () => {
-                updateSliderValues();
-                updateTransitionMarker();
-            });
-            
-            // Buttons
-            elements.previewBtn.addEventListener('click', previewTransition);
-            elements.generateBtn.addEventListener('click', generateVideoWithWebMWriter);
-            elements.playPreviewBtn.addEventListener('click', togglePreviewPlayback);
-            elements.newTransitionBtn.addEventListener('click', resetGenerator);
-            
-            // Show/hide transition marker
-            elements.showTransitionMarker.addEventListener('change', updateTransitionMarker);
-            
-            // Debug toggle
-            elements.debugToggle.addEventListener('click', toggleDebugInfo);
-        }
-        
-        // Toggle debug info visibility
-        function toggleDebugInfo() {
-            CONFIG.debugMode = !CONFIG.debugMode;
-            
-            if (CONFIG.debugMode) {
-                elements.debugInfo.style.display = 'block';
-                elements.debugToggle.textContent = 'Hide Technical Details';
-                debugLog('Debug mode enabled');
-            } else {
-                elements.debugInfo.style.display = 'none';
-                elements.debugToggle.textContent = 'Show Technical Details';
-                console.log('Debug mode disabled');
-            }
-        }
-
-        // Update displayed values for sliders
-        function updateSliderValues() {
-            elements.particleDensityValue.textContent = elements.particleDensity.value;
-            elements.audioVolumeValue.textContent = `${elements.audioVolume.value}%`;
-            elements.transitionPointValue.textContent = `${elements.transitionPoint.value}%`;
-        }
-
-        // Update the position of the transition marker
-        function updateTransitionMarker() {
-            if (elements.showTransitionMarker.checked) {
-                const percentage = parseInt(elements.transitionPoint.value);
-                elements.transitionMarker.style.left = `${percentage}%`;
-                elements.transitionMarker.style.display = 'block';
-            } else {
-                elements.transitionMarker.style.display = 'none';
-            }
-        }
-
-        // Handle image file upload
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    uploadedImage = img;
-                    drawInitialImage();
-                    setStatusMessage('Image loaded successfully. Click Preview to see the transition.', 'info');
-                    debugLog(`Image loaded: ${file.name} (${img.width}x${img.height})`);
-                };
-                img.src = e.target.result;
-            };
-            
-            reader.onerror = function() {
-                setStatusMessage('Error loading image. Please try again.', 'error');
-                debugLog(`Image load error: ${reader.error}`);
-            };
-            
-            reader.readAsDataURL(file);
-        }
-
-        // Handle audio file upload
-        function handleAudioUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            // Initialize AudioContext if needed
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                audioContext.decodeAudioData(e.target.result)
-                    .then(function(buffer) {
-                        audioBuffer = buffer;
-                        setStatusMessage('Audio loaded successfully.', 'info');
-                        debugLog(`Audio loaded: ${file.name} (${(buffer.duration).toFixed(2)}s)`);
-                    })
-                    .catch(function(err) {
-                        setStatusMessage('Error decoding audio file. Please try another file.', 'error');
-                        debugLog(`Audio decode error: ${err}`);
-                    });
-            };
-            
-            reader.onerror = function() {
-                setStatusMessage('Error loading audio file. Please try again.', 'error');
-                debugLog(`Audio load error: ${reader.error}`);
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-
-        // Draw the initial image on the canvas
-        function drawInitialImage() {
-            if (!uploadedImage) return;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-            
-            // Draw image centered
-            const aspectRatio = uploadedImage.width / uploadedImage.height;
-            let drawWidth, drawHeight, x, y;
-            
-            if (aspectRatio > CONFIG.width / CONFIG.height) {
-                // Image is wider than canvas proportionally
-                drawWidth = CONFIG.width;
-                drawHeight = CONFIG.width / aspectRatio;
-                x = 0;
-                y = (CONFIG.height - drawHeight) / 2;
-            } else {
-                // Image is taller than canvas proportionally
-                drawHeight = CONFIG.height;
-                drawWidth = CONFIG.height * aspectRatio;
-                x = (CONFIG.width - drawWidth) / 2;
-                y = 0;
-            }
-            
-            // If transparent background is not checked, draw white background
-            if (!elements.transparentBg.checked) {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
-            }
-            
-            ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-        }
-
-        // Show status message to user
-        function setStatusMessage(message, type) {
-            elements.generationStatus.textContent = message;
-            elements.generationStatus.className = 'status-message';
-            
-            if (type) {
-                elements.generationStatus.classList.add(type);
-            }
-            
-            if (type === 'error' || type === 'success') {
-                debugLog(`Status (${type}): ${message}`);
-            }
-        }
-
-        // Preview the transition
-        function previewTransition() {
-            if (!uploadedImage) {
-                setStatusMessage('Please upload an image first.', 'error');
-                return;
-            }
-            
-            // Stop any ongoing preview
-            stopPreviewPlayback();
-            
-            // Start preview animation
-            isPreviewPlaying = true;
-            startTime = performance.now();
-            particles = createParticles();
-            
-            // Update UI
-            elements.playPreviewBtn.textContent = 'Stop Preview';
-            
-            debugLog('Preview started');
-            
-            // Start animation loop
-            animatePreview();
-        }
-
-        // Toggle preview playback (play/stop)
-        function togglePreviewPlayback() {
-            if (isPreviewPlaying) {
-                stopPreviewPlayback();
-            } else {
-                previewTransition();
-            }
-        }
-
-        // Stop preview playback
-        function stopPreviewPlayback() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            
-            isPreviewPlaying = false;
-            elements.playPreviewBtn.textContent = 'Play Preview';
-            elements.previewProgress.style.width = '0%';
-            
-            // Redraw initial state
-            drawInitialImage();
-            
-            // Stop audio if playing
-            if (audioSource) {
-                audioSource.stop();
-                audioSource = null;
-            }
-            
-            debugLog('Preview stopped');
-        }
-
-        // Animate preview frame by frame
-        function animatePreview() {
-            const now = performance.now();
-            const elapsed = now - startTime;
-            const duration = parseInt(elements.transitionDuration.value);
-            const holdTime = parseInt(elements.holdTime.value);
-            const totalDuration = duration + holdTime;
-            
-            // Calculate progress (0 to 1)
-            let progress = Math.min(elapsed / duration, 1);
-            
-            // Update progress bar
-            const totalProgress = Math.min(elapsed / totalDuration, 1) * 100;
-            elements.previewProgress.style.width = `${totalProgress}%`;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-            
-            // Draw background if not transparent
-            if (!elements.transparentBg.checked) {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
-            }
-            
-            // Apply selected transition effect
-            applyTransitionEffect(progress);
-            
-            // Draw particles if enabled
-            if (elements.particleEffect.value !== 'none') {
-                updateAndDrawParticles(progress);
-            }
-            
-            // Play audio if available
-            if (audioBuffer && audioContext && !audioSource && progress === 0) {
-                playAudio();
-            }
-            
-            // Continue animation if still playing
-            if (isPreviewPlaying && elapsed < totalDuration) {
-                animationFrameId = requestAnimationFrame(animatePreview);
-            } else if (elapsed >= totalDuration) {
-                // Animation complete
-                isPreviewPlaying = false;
-                elements.playPreviewBtn.textContent = 'Play Preview';
+            function initializeEventListeners() {
+                // Image upload
+                document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
                 
-                // Stop audio
-                if (audioSource) {
-                    audioSource.stop();
-                    audioSource = null;
+                // Audio upload
+                document.getElementById('audioUpload').addEventListener('change', handleAudioUpload);
+                
+                // Particle effect toggle
+                document.getElementById('particleEffect').addEventListener('change', function() {
+                    const particleSettings = document.getElementById('particleSettings');
+                    particleSettings.style.display = this.value !== 'none' ? 'block' : 'none';
+                });
+                
+                // Transition point slider
+                const transitionPointInput = document.getElementById('transitionPoint');
+                const transitionPointValue = document.getElementById('transitionPointValue');
+                
+                transitionPointInput.addEventListener('input', function() {
+                    const value = this.value;
+                    transitionPointValue.textContent = `${value}%`;
+                    updateTransitionMarker();
+                });
+                
+                // Preview and Generate buttons
+                document.getElementById('previewBtn').addEventListener('click', previewTransition);
+                document.getElementById('generateBtn').addEventListener('click', generateVideo);
+                
+                // Play/Stop button
+                document.getElementById('playStopBtn').addEventListener('click', togglePlayback);
+                
+                // Create new transition button
+                document.getElementById('newTransitionBtn').addEventListener('click', resetApplication);
+                
+                // Update transition marker position on resize
+                window.addEventListener('resize', updateTransitionMarker);
+                
+                // Initial transition marker position
+                updateTransitionMarker();
+            }
+            
+            function updateTransitionMarker() {
+                const containerWidth = canvas.clientWidth;
+                const transitionPoint = parseInt(document.getElementById('transitionPoint').value);
+                const markerPosition = (containerWidth * transitionPoint) / 100;
+                transitionMarker.style.left = `${markerPosition}px`;
+            }
+            
+            function handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        sourceImage = img;
+                        drawInitialCanvas();
+                        statusMessage.textContent = 'Image loaded';
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            function handleAudioUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    audioBlob = new Blob([e.target.result], { type: file.type });
+                    
+                    // Create audio element for preview
+                    if (audioElement) {
+                        URL.revokeObjectURL(audioElement.src);
+                    }
+                    
+                    audioElement = new Audio();
+                    audioElement.src = URL.createObjectURL(audioBlob);
+                    audioElement.volume = document.getElementById('audioVolume').value / 100;
+                    
+                    statusMessage.textContent = 'Audio loaded';
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            function drawInitialCanvas() {
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
+                
+                if (sourceImage) {
+                    // Draw image centered on canvas
+                    const scale = Math.min(WIDTH / sourceImage.width, HEIGHT / sourceImage.height);
+                    const x = (WIDTH - sourceImage.width * scale) / 2;
+                    const y = (HEIGHT - sourceImage.height * scale) / 2;
+                    
+                    ctx.drawImage(sourceImage, x, y, sourceImage.width * scale, sourceImage.height * scale);
+                }
+            }
+            
+            function previewTransition() {
+                if (!sourceImage) {
+                    alert('Please upload an image first');
+                    return;
                 }
                 
-                debugLog('Preview complete');
-            }
-        }
-
-        // Apply the selected transition effect
-        function applyTransitionEffect(progress) {
-            if (!uploadedImage) return;
-            
-            const effect = elements.transitionEffect.value;
-            const { width, height } = CONFIG;
-            
-            // Calculate image dimensions and position
-            const aspectRatio = uploadedImage.width / uploadedImage.height;
-            let drawWidth, drawHeight, x, y;
-            
-            if (aspectRatio > width / height) {
-                drawWidth = width;
-                drawHeight = width / aspectRatio;
-                x = 0;
-                y = (height - drawHeight) / 2;
-            } else {
-                drawHeight = height;
-                drawWidth = height * aspectRatio;
-                x = (width - drawWidth) / 2;
-                y = 0;
-            }
-            
-            // Save context state
-            ctx.save();
-            
-            // Apply effect based on selection
-            switch(effect) {
-                case 'leftToRight':
-                    ctx.beginPath();
-                    ctx.rect(0, 0, width * progress, height);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
+                if (isPlaying) {
+                    stopPlayback();
+                }
+                
+                const transitionEffect = document.getElementById('transitionEffect').value;
+                const particleEffect = document.getElementById('particleEffect').value;
+                const transitionDuration = parseFloat(document.getElementById('transitionDuration').value) * 1000; // Convert to ms
+                const holdDuration = parseFloat(document.getElementById('holdDuration').value) * 1000; // Convert to ms
+                const totalDuration = transitionDuration + holdDuration;
+                
+                // Reset audio if present
+                if (audioElement) {
+                    audioElement.currentTime = 0;
+                }
+                
+                // Start playback
+                isPlaying = true;
+                document.getElementById('playStopBtn').textContent = 'Stop';
+                startTime = Date.now();
+                
+                if (audioElement) {
+                    audioElement.play();
+                }
+                
+                // Animation loop
+                function animate() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / totalDuration, 1);
                     
-                case 'rightToLeft':
-                    ctx.beginPath();
-                    ctx.rect(width * (1 - progress), 0, width * progress, height);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
+                    // Update progress bar
+                    progressBar.style.width = `${progress * 100}%`;
                     
-                case 'topToBottom':
-                    ctx.beginPath();
-                    ctx.rect(0, 0, width, height * progress);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
+                    // Render the current frame
+                    renderFrame(elapsed, transitionDuration, holdDuration, transitionEffect, particleEffect);
                     
-                case 'bottomToTop':
-                    ctx.beginPath();
-                    ctx.rect(0, height * (1 - progress), width, height * progress);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
-                    
-                case 'fade':
-                    ctx.globalAlpha = progress;
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
-                    
-                case 'zoom':
-                    const scale = progress;
-                    const scaledWidth = drawWidth * scale;
-                    const scaledHeight = drawHeight * scale;
-                    const scaledX = x + (drawWidth - scaledWidth) / 2;
-                    const scaledY = y + (drawHeight - scaledHeight) / 2;
-                    ctx.drawImage(uploadedImage, scaledX, scaledY, scaledWidth, scaledHeight);
-                    break;
-                    
-                case 'pixelate':
-                    const pixelSize = Math.max(1, Math.floor((1 - progress) * 30));
-                    
-                    // Create a temporary canvas for pixelation
-                    const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
-                    
-                    // Set small size for pixelation
-                    tempCanvas.width = width / pixelSize;
-                    tempCanvas.height = height / pixelSize;
-                    
-                    // Draw small image (pixelated)
-                    tempCtx.drawImage(uploadedImage, x / pixelSize, y / pixelSize, 
-                                     drawWidth / pixelSize, drawHeight / pixelSize);
-                    
-                    // Draw back to main canvas scaled up (blocky)
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height, 
-                                 0, 0, width, height);
-                    ctx.imageSmoothingEnabled = true;
-                    break;
-                    
-                case 'circularWipe':
-                    const radius = Math.sqrt(width * width + height * height) * progress;
-                    ctx.beginPath();
-                    ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
-                    
-                case 'splitHorizontal':
-                    // Top half
-                    ctx.beginPath();
-                    ctx.rect(0, 0, width, height / 2 - (height / 2 * (1 - progress)));
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    
-                    ctx.restore();
-                    ctx.save();
-                    
-                    // Bottom half
-                    ctx.beginPath();
-                    ctx.rect(0, height / 2 + (height / 2 * (1 - progress)), width, height / 2);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
-                    
-                case 'splitVertical':
-                    // Left half
-                    ctx.beginPath();
-                    ctx.rect(0, 0, width / 2 - (width / 2 * (1 - progress)), height);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    
-                    ctx.restore();
-                    ctx.save();
-                    
-                    // Right half
-                    ctx.beginPath();
-                    ctx.rect(width / 2 + (width / 2 * (1 - progress)), 0, width / 2, height);
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
-                    
-                case 'glitch':
-                    const sliceHeight = height / 20;
-                    const maxOffset = 20 * (1 - progress);
-                    
-                    for (let i = 0; i < 20; i++) {
-                        const yPos = i * sliceHeight;
-                        const xOffset = Math.random() * maxOffset * (Math.random() > 0.5 ? 1 : -1);
-                        
-                        ctx.drawImage(
-                            uploadedImage,
-                            0, (i / 20) * uploadedImage.height, uploadedImage.width, uploadedImage.height / 20,
-                            x + xOffset, y + yPos, drawWidth, sliceHeight
-                        );
+                    // Continue animation if not complete
+                    if (progress < 1 && isPlaying) {
+                        animationFrameId = requestAnimationFrame(animate);
+                    } else if (progress >= 1) {
+                        stopPlayback();
                     }
-                    break;
-                    
-                case 'blurToClear':
-                    // Not true blur but a simplified version using scale
-                    // For true blur, would need to use filters or multiple draws with offsets
-                    ctx.filter = `blur(${(1 - progress) * 20}px)`;
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    ctx.filter = 'none';
-                    break;
-                    
-                case 'grayscaleToColor':
-                    // Draw grayscale version
-                    ctx.filter = `grayscale(${1 - progress})`;
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    ctx.filter = 'none';
-                    break;
-                    
-                case 'venetianBlinds':
-                    const blinds = 10;
-                    const blindHeight = height / blinds;
-                    
-                    for (let i = 0; i < blinds; i++) {
-                        const blindY = i * blindHeight;
-                        const blindWidth = width * progress;
-                        
+                }
+                
+                animate();
+            }
+            
+            function togglePlayback() {
+                if (isPlaying) {
+                    stopPlayback();
+                } else {
+                    previewTransition();
+                }
+            }
+            
+            function stopPlayback() {
+                isPlaying = false;
+                document.getElementById('playStopBtn').textContent = 'Play';
+                
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                
+                if (audioElement) {
+                    audioElement.pause();
+                }
+                
+                // Reset canvas to initial state
+                drawInitialCanvas();
+                progressBar.style.width = '0%';
+                statusMessage.textContent = 'Ready';
+            }
+            
+            function renderFrame(elapsed, transitionDuration, holdDuration, effectName, particleEffectName) {
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
+                
+                if (!sourceImage) return;
+                
+                // Calculate transition progress (0 to 1)
+                let transitionProgress = Math.min(elapsed / transitionDuration, 1);
+                
+                // Apply the selected transition effect
+                applyTransitionEffect(ctx, sourceImage, transitionProgress, effectName);
+                
+                // Apply particle effects if selected
+                if (particleEffectName !== 'none') {
+                    const particleColor = document.getElementById('particleColor').value;
+                    const particleDensity = parseInt(document.getElementById('particleDensity').value);
+                    applyParticleEffect(ctx, transitionProgress, particleEffectName, particleColor, particleDensity);
+                }
+            }
+            
+            function applyTransitionEffect(ctx, image, progress, effectName) {
+                // Calculate image position for centered drawing
+                const scale = Math.min(WIDTH / image.width, HEIGHT / image.height);
+                const scaledWidth = image.width * scale;
+                const scaledHeight = image.height * scale;
+                const x = (WIDTH - scaledWidth) / 2;
+                const y = (HEIGHT - scaledHeight) / 2;
+                
+                // Apply the requested effect based on name
+                switch (effectName) {
+                    case 'left-to-right':
+                        const clipWidth = WIDTH * progress;
+                        ctx.save();
                         ctx.beginPath();
-                        ctx.rect(0, blindY, blindWidth, blindHeight);
+                        ctx.rect(0, 0, clipWidth, HEIGHT);
                         ctx.clip();
-                        ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
                         
+                    case 'right-to-left':
+                        const rightClipWidth = WIDTH * progress;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(WIDTH - rightClipWidth, 0, rightClipWidth, HEIGHT);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'top-to-bottom':
+                        const clipHeight = HEIGHT * progress;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, 0, WIDTH, clipHeight);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'bottom-to-top':
+                        const bottomClipHeight = HEIGHT * progress;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, HEIGHT - bottomClipHeight, WIDTH, bottomClipHeight);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'fade-in':
+                        ctx.globalAlpha = progress;
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.globalAlpha = 1;
+                        break;
+                        
+                    case 'zoom-in':
+                        const zoomScale = 0.5 + (progress * 0.5);
+                        const zoomWidth = scaledWidth * zoomScale;
+                        const zoomHeight = scaledHeight * zoomScale;
+                        const zoomX = (WIDTH - zoomWidth) / 2;
+                        const zoomY = (HEIGHT - zoomHeight) / 2;
+                        ctx.drawImage(image, zoomX, zoomY, zoomWidth, zoomHeight);
+                        break;
+                        
+                    case 'pixelate':
+                        // Create a pixelated version of the image with decreasing pixel size
+                        const maxPixelSize = 32;
+                        const pixelSize = Math.max(1, Math.floor(maxPixelSize * (1 - progress)));
+                        
+                        // Draw in low resolution to temporary canvas
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = WIDTH / pixelSize;
+                        tempCanvas.height = HEIGHT / pixelSize;
+                        const tempCtx = tempCanvas.getContext('2d');
+                        
+                        tempCtx.drawImage(image, 0, 0, tempCanvas.width, tempCanvas.height);
+                        
+                        // Draw to main canvas scaled up
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(tempCanvas, 0, 0, WIDTH, HEIGHT);
+                        ctx.imageSmoothingEnabled = true;
+                        break;
+                        
+                    case 'circular-wipe':
+                        const radius = Math.sqrt(WIDTH * WIDTH + HEIGHT * HEIGHT) * progress;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(WIDTH / 2, HEIGHT / 2, radius, 0, Math.PI * 2);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'horizontal-split':
+                        const splitHeight = HEIGHT / 2 * progress;
+                        
+                        // Top half
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, 0, WIDTH, splitHeight);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
                         ctx.restore();
                         
-                        if (i < blinds - 1) {
-                            ctx.save();
+                        // Bottom half
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, HEIGHT - splitHeight, WIDTH, splitHeight);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'vertical-split':
+                        const splitWidth = WIDTH / 2 * progress;
+                        
+                        // Left half
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, 0, splitWidth, HEIGHT);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        
+                        // Right half
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(WIDTH - splitWidth, 0, splitWidth, HEIGHT);
+                        ctx.clip();
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'glitch':
+                        // Create a glitch effect with random offsets
+                        const intensity = 0.5 - Math.abs(0.5 - progress);
+                        
+                        // Draw the base image
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        
+                        // Apply glitch effect if intensity is significant
+                        if (intensity > 0.05) {
+                            // Number of glitch slices
+                            const slices = 10;
+                            const sliceHeight = HEIGHT / slices;
+                            
+                            // Create RGB channel splits
+                            for (let i = 0; i < slices; i++) {
+                                // Skip random slices
+                                if (Math.random() > 0.3) continue;
+                                
+                                // Random offset for this slice
+                                const offsetX = (Math.random() - 0.5) * intensity * 100;
+                                
+                                // Get data from the original image
+                                const imgData = ctx.getImageData(0, i * sliceHeight, WIDTH, sliceHeight);
+                                
+                                // Draw with offset
+                                ctx.putImageData(imgData, offsetX, i * sliceHeight);
+                                
+                                // Random RGB shifts for some slices
+                                if (Math.random() > 0.6) {
+                                    const rgbData = ctx.getImageData(0, i * sliceHeight, WIDTH, sliceHeight);
+                                    const data = rgbData.data;
+                                    
+                                    // Shift RGB channels
+                                    for (let j = 0; j < data.length; j += 4) {
+                                        // Randomly shift red or blue channel
+                                        const channelToShift = Math.random() > 0.5 ? 0 : 2;
+                                        data[j + channelToShift] = 255;
+                                    }
+                                    
+                                    ctx.putImageData(rgbData, 0, i * sliceHeight);
+                                }
+                            }
                         }
-                    }
-                    return; // Early return to avoid final restore
-                    
-                case 'diagonalWipe':
-                    const diagProgress = progress * 2; // Go from 0-2 for full coverage
-                    ctx.beginPath();
-                    ctx.moveTo(0, height * (1 - Math.min(1, diagProgress)));
-                    ctx.lineTo(Math.max(0, diagProgress - 1) * width, height);
-                    ctx.lineTo(0, height);
-                    ctx.closePath();
-                    ctx.clip();
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
-                    break;
-                    
-                case 'bounce':
-                    // Elastic bounce effect
-                    let bounceProgress;
-                    if (progress < 0.7) {
-                        // Scale from 0 to 1.2 for overshoot
-                        bounceProgress = (progress / 0.7) * 1.2;
-                    } else {
-                        // Bounce back from 1.2 to 1.0
-                        bounceProgress = 1.2 - (progress - 0.7) * (0.2 / 0.3);
-                    }
-                    
-                    // Scale image with bounce effect
-                    const bounceScale = bounceProgress;
-                    const bounceWidth = drawWidth * bounceScale;
-                    const bounceHeight = drawHeight * bounceScale;
-                    const bounceX = x + (drawWidth - bounceWidth) / 2;
-                    const bounceY = y + (drawHeight - bounceHeight) / 2;
-                    
-                    ctx.drawImage(uploadedImage, bounceX, bounceY, bounceWidth, bounceHeight);
-                    break;
-                    
-                default:
-                    // Default: just draw the image
-                    ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
+                        break;
+                        
+                    case 'blur-to-clear':
+                        // This effect is an approximation since canvas doesn't have a simple blur transition
+                        // We'll manually implement using a temporary canvas and varying blur levels
+                        
+                        // Calculate blur amount (max at start, clear at end)
+                        const blurAmount = 20 * (1 - progress);
+                        
+                        if (blurAmount <= 0) {
+                            // Just draw the image normally when fully clear
+                            ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        } else {
+                            // Create a temporary canvas for the blur effect
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = WIDTH;
+                            tempCanvas.height = HEIGHT;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            
+                            // Draw the image to the temp canvas
+                            tempCtx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                            
+                            // Apply a blur-like effect using multiple shadow layers
+                            ctx.save();
+                            ctx.fillStyle = 'rgba(255,255,255,0)';
+                            ctx.shadowColor = 'rgba(0,0,0,1)';
+                            ctx.shadowBlur = blurAmount;
+                            
+                            // Draw the image using shadow blur
+                            ctx.drawImage(tempCanvas, 0, 0);
+                            ctx.restore();
+                        }
+                        break;
+                        
+                    case 'grayscale-to-color':
+                        // Draw the base image
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        
+                        // Apply grayscale filter with decreasing intensity
+                        const grayscaleIntensity = 1 - progress;
+                        
+                        if (grayscaleIntensity > 0) {
+                            // Get image data
+                            const imageData = ctx.getImageData(0, 0, WIDTH, HEIGHT);
+                            const data = imageData.data;
+                            
+                            // Apply grayscale with fading intensity
+                            for (let i = 0; i < data.length; i += 4) {
+                                if (data[i + 3] > 0) { // Only process non-transparent pixels
+                                    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                                    
+                                    // Blend between grayscale and original color
+                                    data[i] = gray * grayscaleIntensity + data[i] * (1 - grayscaleIntensity);
+                                    data[i + 1] = gray * grayscaleIntensity + data[i + 1] * (1 - grayscaleIntensity);
+                                    data[i + 2] = gray * grayscaleIntensity + data[i + 2] * (1 - grayscaleIntensity);
+                                }
+                            }
+                            
+                            ctx.putImageData(imageData, 0, 0);
+                        }
+                        break;
+                        
+                    case 'venetian-blinds':
+                        const blinds = 20; // Number of blinds
+                        const blindHeight = HEIGHT / blinds;
+                        const blindWidth = WIDTH * progress;
+                        
+                        for (let i = 0; i < blinds; i++) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.rect(0, i * blindHeight, blindWidth, blindHeight);
+                            ctx.clip();
+                            ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                            ctx.restore();
+                        }
+                        break;
+                        
+                    case 'diagonal-wipe':
+                        // Calculate the diagonal length of the canvas
+                        const diagonal = Math.sqrt(WIDTH * WIDTH + HEIGHT * HEIGHT);
+                        const diagonalProgress = diagonal * progress;
+                        
+                        // Calculate the equation of the moving line
+                        // Line equation: ax + by + c = 0
+                        const a = HEIGHT / WIDTH;
+                        const b = -1;
+                        const c = -WIDTH * progress;
+                        
+                        ctx.save();
+                        ctx.beginPath();
+                        
+                        // Create a clip path for one side of the diagonal line
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(WIDTH, 0);
+                        
+                        // Check if the line has entered the canvas from the right
+                        if (progress > WIDTH / diagonal) {
+                            ctx.lineTo(WIDTH, (a * WIDTH + c) / -b);
+                        } else {
+                            ctx.lineTo(c / -a, 0);
+                        }
+                        
+                        // Close the path
+                        ctx.lineTo(0, 0);
+                        ctx.clip();
+                        
+                        // Draw the image within the clip area
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                        break;
+                        
+                    case 'bounce':
+                        // Bounce effect with easing
+                        let bounceProgress = progress;
+                        
+                        // Apply an elastic bounce curve
+                        if (progress < 0.9) {
+                            // Scale up as we progress
+                            const elasticScale = 1 + Math.sin(progress * Math.PI) * 0.1;
+                            const bounceX = (WIDTH - scaledWidth * elasticScale) / 2;
+                            const bounceY = (HEIGHT - scaledHeight * elasticScale) / 2;
+                            
+                            ctx.drawImage(image, bounceX, bounceY, scaledWidth * elasticScale, scaledHeight * elasticScale);
+                        } else {
+                            // Settle to normal size in the last 10%
+                            const finalProgress = (progress - 0.9) / 0.1;
+                            const finalScale = 1.1 - (finalProgress * 0.1);
+                            const finalX = (WIDTH - scaledWidth * finalScale) / 2;
+                            const finalY = (HEIGHT - scaledHeight * finalScale) / 2;
+                            
+                            ctx.drawImage(image, finalX, finalY, scaledWidth * finalScale, scaledHeight * finalScale);
+                        }
+                        break;
+                        
+                    default:
+                        // Default to drawing the full image
+                        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                        break;
+                }
             }
             
-            // Restore context state
-            ctx.restore();
-        }
-
-        // Create particles based on selected effect
-        function createParticles() {
-            const particleType = elements.particleEffect.value;
-            if (particleType === 'none') return [];
+            function applyParticleEffect(ctx, progress, effectName, color, density) {
+                // Skip if effect is 'none'
+                if (effectName === 'none') return;
+                
+                // Calculate the number of particles based on density (1-100)
+                const baseParticleCount = 50;
+                const particleCount = Math.floor(baseParticleCount * (density / 50));
+                
+                // Generate particles if they don't exist or are for a different effect
+                if (!window.particles || window.particleEffectName !== effectName) {
+                    window.particles = [];
+                    window.particleEffectName = effectName;
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        window.particles.push(createParticle(effectName, color));
+                    }
+                }
+                
+                // Update and draw particles
+                for (let i = 0; i < window.particles.length; i++) {
+                    const particle = window.particles[i];
+                    
+                    // Update particle position and properties based on progress
+                    updateParticle(particle, progress, effectName);
+                    
+                    // Draw the particle
+                    drawParticle(ctx, particle, effectName, color);
+                }
+            }
             
-            const density = parseInt(elements.particleDensity.value);
-            const color = elements.particleColor.value;
-            const count = Math.floor(density * 2);
-            const particles = [];
-            
-            for (let i = 0; i < count; i++) {
+            function createParticle(effectName, color) {
+                // Base particle object with common properties
                 const particle = {
-                    x: Math.random() * CONFIG.width,
-                    y: Math.random() * CONFIG.height,
-                    size: Math.random() * 5 + 2,
-                    speedX: Math.random() * 6 - 3,
-                    speedY: Math.random() * 6 - 3,
-                    color: color,
-                    opacity: Math.random() * 0.7 + 0.3,
-                    type: particleType,
-                    rotation: Math.random() * 360,
-                    rotationSpeed: (Math.random() * 2 - 1) * 5
+                    x: Math.random() * WIDTH,
+                    y: Math.random() * HEIGHT,
+                    size: 0,
+                    speed: 0,
+                    opacity: 0,
+                    angle: Math.random() * Math.PI * 2,
+                    color: color
                 };
                 
-                // Type-specific properties
-                switch(particleType) {
+                // Customize based on effect type
+                switch (effectName) {
                     case 'confetti':
-                        particle.width = Math.random() * 10 + 5;
-                        particle.height = Math.random() * 10 + 5;
+                        particle.x = Math.random() * WIDTH;
+                        particle.y = -Math.random() * HEIGHT * 0.5; // Start above the screen
+                        particle.size = 3 + Math.random() * 7;
+                        particle.speed = 1 + Math.random() * 3;
+                        particle.angle = Math.random() * Math.PI * 2;
+                        particle.rotationSpeed = (Math.random() - 0.5) * 0.1;
+                        particle.color = Math.random() > 0.5 ? color : getRandomColor();
                         break;
                         
                     case 'sparks':
-                        particle.tail = Math.random() * 10 + 5;
-                        particle.decay = Math.random() * 0.03 + 0.01;
+                        particle.x = WIDTH / 2;
+                        particle.y = HEIGHT / 2;
+                        particle.size = 1 + Math.random() * 3;
+                        particle.speed = 2 + Math.random() * 5;
+                        particle.angle = Math.random() * Math.PI * 2;
+                        particle.lifespan = 0.3 + Math.random() * 0.7; // When to start fading (0-1)
                         break;
                         
                     case 'bubbles':
-                        particle.maxSize = particle.size * (Math.random() * 2 + 2);
-                        particle.growSpeed = Math.random() * 0.1 + 0.05;
+                        particle.x = Math.random() * WIDTH;
+                        particle.y = HEIGHT + Math.random() * HEIGHT * 0.2; // Start below the screen
+                        particle.size = 5 + Math.random() * 15;
+                        particle.speed = 0.5 + Math.random() * 2;
+                        particle.opacity = 0.4 + Math.random() * 0.3;
                         break;
                         
                     case 'smoke':
-                        particle.maxSize = particle.size * (Math.random() * 5 + 3);
-                        particle.growSpeed = Math.random() * 0.1 + 0.05;
-                        particle.decay = Math.random() * 0.01 + 0.005;
+                        particle.x = Math.random() * WIDTH;
+                        particle.y = HEIGHT;
+                        particle.size = 20 + Math.random() * 30;
+                        particle.speed = 0.2 + Math.random() * 1;
+                        particle.opacity = 0.1 + Math.random() * 0.2;
+                        particle.growFactor = 1.01 + Math.random() * 0.02;
                         break;
                         
                     case 'stars':
-                        particle.points = Math.floor(Math.random() * 3) + 4; // 4-6 point stars
-                        particle.innerRadius = particle.size * 0.4;
-                        particle.twinkle = Math.random() * 0.05 + 0.02;
-                        particle.twinkleDir = 1;
+                        particle.x = Math.random() * WIDTH;
+                        particle.y = Math.random() * HEIGHT;
+                        particle.size = 1 + Math.random() * 3;
+                        particle.twinkleSpeed = 0.03 + Math.random() * 0.05;
+                        particle.twinkleOffset = Math.random() * Math.PI * 2;
                         break;
                 }
                 
-                particles.push(particle);
+                return particle;
             }
             
-            return particles;
-        }
-
-        // Update and draw particles
-        function updateAndDrawParticles(progress) {
-            // Only show particles after a certain point in the animation
-            if (progress < 0.3) return;
-            
-            const particleProgress = (progress - 0.3) / 0.7; // Remap 0.3-1.0 to 0-1
-            const particleType = elements.particleEffect.value;
-            
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                
-                // Only show a portion of particles based on progress
-                if (i / particles.length > particleProgress) continue;
-                
-                // Update position based on speed
-                p.x += p.speedX;
-                p.y += p.speedY;
-                p.rotation += p.rotationSpeed;
-                
-                // Type-specific updates
-                switch(particleType) {
+            function updateParticle(particle, progress, effectName) {
+                // Update particle based on effect type and animation progress
+                switch (effectName) {
                     case 'confetti':
-                        // Update rotation
-                        p.rotation += p.rotationSpeed;
+                        // Move downward and rotate
+                        particle.y += particle.speed * 5;
+                        particle.angle += particle.rotationSpeed;
                         
-                        // Draw confetti rect
-                        ctx.save();
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.rotation * Math.PI / 180);
-                        ctx.globalAlpha = p.opacity;
-                        ctx.fillStyle = p.color;
-                        ctx.fillRect(-p.width / 2, -p.height / 2, p.width, p.height);
-                        ctx.restore();
+                        // Reset if off-screen
+                        if (particle.y > HEIGHT + particle.size) {
+                            particle.y = -particle.size;
+                            particle.x = Math.random() * WIDTH;
+                        }
+                        
+                        // Set opacity based on progress
+                        particle.opacity = progress < 0.2 ? progress / 0.2 : 1;
                         break;
                         
                     case 'sparks':
-                        // Reduce opacity over time
-                        p.opacity -= p.decay;
+                        // Calculate active status based on progress and lifespan
+                        const sparkActive = progress < particle.lifespan;
                         
-                        // Draw spark line
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p.x - p.speedX * p.tail, p.y - p.speedY * p.tail);
-                        ctx.strokeStyle = p.color;
-                        ctx.globalAlpha = p.opacity;
-                        ctx.lineWidth = p.size;
-                        ctx.stroke();
+                        if (sparkActive) {
+                            // Move outward from center
+                            const distanceFactor = progress / particle.lifespan;
+                            const distance = particle.speed * distanceFactor * WIDTH * 0.4;
+                            
+                            particle.x = WIDTH / 2 + Math.cos(particle.angle) * distance;
+                            particle.y = HEIGHT / 2 + Math.sin(particle.angle) * distance;
+                            
+                            // Fade out as it reaches its max distance
+                            particle.opacity = 1 - distanceFactor;
+                        } else {
+                            particle.opacity = 0;
+                        }
                         break;
                         
                     case 'bubbles':
-                        // Grow bubbles
-                        p.size = Math.min(p.maxSize, p.size + p.growSpeed);
+                        // Move upward
+                        particle.y -= particle.speed * 3;
                         
-                        // Draw bubble
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = p.opacity * 0.7;
-                        ctx.fill();
+                        // Add subtle horizontal movement
+                        particle.x += Math.sin(progress * 10 + particle.angle) * 0.5;
                         
-                        // Draw highlight
-                        ctx.beginPath();
-                        ctx.arc(p.x - p.size * 0.3, p.y - p.size * 0.3, p.size * 0.2, 0, Math.PI * 2);
-                        ctx.fillStyle = 'white';
-                        ctx.globalAlpha = p.opacity * 0.5;
-                        ctx.fill();
+                        // Reset if off-screen
+                        if (particle.y < -particle.size) {
+                            particle.y = HEIGHT + particle.size;
+                            particle.x = Math.random() * WIDTH;
+                        }
                         break;
                         
                     case 'smoke':
-                        // Grow and fade smoke
-                        p.size = Math.min(p.maxSize, p.size + p.growSpeed);
-                        p.opacity -= p.decay;
+                        // Rise and expand
+                        particle.y -= particle.speed * 2;
+                        particle.size *= particle.growFactor;
                         
-                        // Draw smoke circle
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = p.opacity * 0.4;
-                        ctx.fill();
+                        // Add drift
+                        particle.x += Math.sin(progress * 5 + particle.angle) * 0.5;
+                        
+                        // Fade out as it rises
+                        particle.opacity = Math.max(0, particle.opacity - 0.002);
+                        
+                        // Reset if completely faded or too large
+                        if (particle.opacity <= 0 || particle.size > 200) {
+                            particle.y = HEIGHT;
+                            particle.x = Math.random() * WIDTH;
+                            particle.size = 20 + Math.random() * 30;
+                            particle.opacity = 0.1 + Math.random() * 0.2;
+                        }
                         break;
                         
                     case 'stars':
                         // Twinkle effect
-                        p.opacity += p.twinkle * p.twinkleDir;
-                        if (p.opacity > 1 || p.opacity < 0.3) {
-                            p.twinkleDir *= -1;
-                        }
-                        
-                        // Draw star
-                        ctx.save();
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.rotation * Math.PI / 180);
-                        ctx.beginPath();
-                        
-                        for (let j = 0; j < p.points * 2; j++) {
-                            const radius = j % 2 === 0 ? p.size : p.innerRadius;
-                            const angle = (j * Math.PI) / p.points;
-                            const x = radius * Math.cos(angle);
-                            const y = radius * Math.sin(angle);
-                            
-                            if (j === 0) {
-                                ctx.moveTo(x, y);
-                            } else {
-                                ctx.lineTo(x, y);
-                            }
-                        }
-                        
-                        ctx.closePath();
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = p.opacity;
-                        ctx.fill();
-                        ctx.restore();
+                        particle.opacity = 0.3 + 0.7 * Math.sin(progress * 10 + particle.twinkleOffset + particle.twinkleSpeed * 100);
                         break;
                 }
             }
             
-            // Reset global alpha
-            ctx.globalAlpha = 1;
-        }
-
-        // Play audio with volume control
-        function playAudio() {
-            if (!audioBuffer || !audioContext) return;
-            
-            // Create source and gain nodes
-            audioSource = audioContext.createBufferSource();
-            audioSource.buffer = audioBuffer;
-            
-            audioGain = audioContext.createGain();
-            audioGain.gain.value = parseInt(elements.audioVolume.value) / 100;
-            
-            // Connect nodes
-            audioSource.connect(audioGain);
-            audioGain.connect(audioContext.destination);
-            
-            // Start playback
-            audioSource.start(0);
-            
-            debugLog(`Playing audio at ${audioGain.gain.value * 100}% volume`);
-        }
-
-        // Generate video using WebM Writer
-        function generateVideoWithWebMWriter() {
-            if (!uploadedImage) {
-                setStatusMessage('Please upload an image first.', 'error');
-                return;
-            }
-            
-            // Check WebM Writer
-            if (typeof WebMWriter !== 'function') {
-                setStatusMessage('WebM Writer library not loaded. Cannot generate video with proper metadata.', 'error');
-                return;
-            }
-            
-            // Get settings
-            const duration = parseInt(elements.transitionDuration.value);
-            const holdTime = parseInt(elements.holdTime.value);
-            const totalDuration = duration + holdTime;
-            const totalDurationSeconds = totalDuration / 1000;
-            const transitionPoint = parseInt(elements.transitionPoint.value);
-            
-            // Show loading overlay
-            showLoading('Preparing to generate video...', 5);
-            
-            // Disable buttons during generation
-            elements.generateBtn.disabled = true;
-            elements.previewBtn.disabled = true;
-            
-            // Create WebM Writer with proper metadata settings
-            webmWriter = new WebMWriter({
-                quality: 0.95,   // Quality from 0 to 1
-                fileWriter: null, // Don't use FileWriter
-                transparent: elements.transparentBg.checked, // Use transparency if required
-                frameDuration: 1000 / CONFIG.fps, // Duration of each frame in ms
-                frameRate: CONFIG.fps, // Frames per second
+            function drawParticle(ctx, particle, effectName, baseColor) {
+                // Skip drawing if fully transparent
+                if (particle.opacity <= 0) return;
                 
-                // Metadata - this is the key part that fills in the WebM container info
-                metadata: {
-                    duration: totalDurationSeconds, // in seconds
-                    muxingApp: 'OBS Stinger Transition Generator',
-                    writingApp: 'OBS Stinger Transition Generator 2.0',
-                    info: {
-                        title: `OBS Transition - Point at ${transitionPoint}% - Duration ${totalDurationSeconds}s`,
-                        duration: totalDurationSeconds,
-                        fps: CONFIG.fps,
-                        transitionPointMs: Math.round(totalDuration * (transitionPoint / 100)),
-                        transitionPointPercent: transitionPoint,
-                        width: CONFIG.width,
-                        height: CONFIG.height
-                    }
+                ctx.save();
+                
+                // Set global alpha for transparency
+                ctx.globalAlpha = particle.opacity;
+                
+                switch (effectName) {
+                    case 'confetti':
+                        // Draw rotated rectangle
+                        ctx.translate(particle.x, particle.y);
+                        ctx.rotate(particle.angle);
+                        
+                        ctx.fillStyle = particle.color;
+                        ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+                        break;
+                        
+                    case 'sparks':
+                        // Draw as small bright circles
+                        ctx.fillStyle = particle.color;
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Add glow effect
+                        ctx.globalAlpha = particle.opacity * 0.5;
+                        ctx.filter = 'blur(2px)';
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.filter = 'none';
+                        break;
+                        
+                    case 'bubbles':
+                        // Draw circle with highlight
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.lineWidth = 1;
+                        
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        // Add highlight
+                        ctx.globalAlpha = particle.opacity * 0.7;
+                        ctx.beginPath();
+                        ctx.arc(particle.x - particle.size * 0.3, particle.y - particle.size * 0.3, particle.size * 0.2, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                        
+                    case 'smoke':
+                        // Create a gradient for smoke effect
+                        const gradient = ctx.createRadialGradient(
+                            particle.x, particle.y, 0,
+                            particle.x, particle.y, particle.size
+                        );
+                        
+                        // Parse the color to get RGB components
+                        const r = parseInt(baseColor.substring(1, 3), 16);
+                        const g = parseInt(baseColor.substring(3, 5), 16);
+                        const b = parseInt(baseColor.substring(5, 7), 16);
+                        
+                        gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${particle.opacity})`);
+                        gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+                        
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                        
+                    case 'stars':
+                        // Draw a star shape with 5 points
+                        ctx.fillStyle = particle.color;
+                        
+                        // Draw star
+                        const outerRadius = particle.size;
+                        const innerRadius = particle.size * 0.4;
+                        const spikes = 5;
+                        
+                        ctx.beginPath();
+                        ctx.translate(particle.x, particle.y);
+                        ctx.moveTo(0, -outerRadius);
+                        
+                        for (let i = 0; i < spikes; i++) {
+                            ctx.rotate(Math.PI / spikes);
+                            ctx.lineTo(0, -innerRadius);
+                            ctx.rotate(Math.PI / spikes);
+                            ctx.lineTo(0, -outerRadius);
+                        }
+                        
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Add glow
+                        ctx.globalAlpha = particle.opacity * 0.5;
+                        ctx.filter = 'blur(2px)';
+                        ctx.fill();
+                        ctx.filter = 'none';
+                        break;
                 }
-            });
+                
+                ctx.restore();
+            }
             
-            debugLog(`Starting WebM Writer with duration ${totalDurationSeconds.toFixed(2)}s at ${CONFIG.fps} FPS`);
-            updateLoading(`Initializing WebM Writer with ${CONFIG.fps} FPS`, 10);
+            function getRandomColor() {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
             
-            // Render all frames of the animation
-            setTimeout(() => {
-                renderVideoFrames(duration, holdTime, transitionPoint);
-            }, 200); // Small delay to allow UI update
-        }
-        
-        // Render all frames for the video
-        function renderVideoFrames(duration, holdTime, transitionPoint) {
-            const totalDuration = duration + holdTime;
-            const totalFrames = Math.ceil(totalDuration / (1000 / CONFIG.fps));
-            let frameCount = 0;
-            
-            debugLog(`Starting frame rendering: ${totalFrames} frames required`);
-            updateLoading(`Rendering frames (0/${totalFrames})...`, 15);
-            
-            // Create particles for the animation
-            particles = createParticles();
-            
-            // Render each frame
-            const renderNextFrame = (frameIndex) => {
-                if (frameIndex >= totalFrames) {
-                    // All frames rendered, finalize video
-                    finalizeVideo(transitionPoint, totalDuration / 1000);
+            function generateVideo() {
+                if (!sourceImage) {
+                    alert('Please upload an image first');
                     return;
                 }
                 
-                // Calculate progress for this frame
-                const elapsedTime = frameIndex * (1000 / CONFIG.fps);
-                let progress;
+                // Get settings
+                const transitionEffect = document.getElementById('transitionEffect').value;
+                const particleEffect = document.getElementById('particleEffect').value;
+                const transitionDuration = parseFloat(document.getElementById('transitionDuration').value);
+                const holdDuration = parseFloat(document.getElementById('holdDuration').value);
+                const totalDuration = transitionDuration + holdDuration;
+                const frameRate = parseInt(document.getElementById('frameRate').value);
+                const transitionPoint = parseInt(document.getElementById('transitionPoint').value);
+                const useTransparency = document.getElementById('transparencyToggle').checked;
                 
-                if (elapsedTime <= duration) {
-                    progress = elapsedTime / duration;
-                } else {
-                    progress = 1; // Hold at final frame
-                }
+                // Particle effect settings
+                const particleColor = document.getElementById('particleColor').value;
+                const particleDensity = parseInt(document.getElementById('particleDensity').value);
                 
-                // Clear canvas
-                ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+                // Show loading overlay
+                loadingOverlay.style.display = 'flex';
+                loadingProgressBar.style.width = '0%';
+                loadingStatusMessage.textContent = 'Preparing to generate video...';
                 
-                // Draw background if not transparent
-                if (!elements.transparentBg.checked) {
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
-                }
-                
-                // Apply transition effect
-                applyTransitionEffect(progress);
-                
-                // Draw particles if enabled
-                if (elements.particleEffect.value !== 'none') {
-                    updateAndDrawParticles(progress);
-                }
-                
-                // Add this frame to WebM Writer
-                webmWriter.addFrame(elements.previewCanvas);
-                
-                // Update progress
-                frameCount++;
-                if (frameCount % 10 === 0 || frameCount === totalFrames) {
-                    const percentComplete = Math.round((frameCount / totalFrames) * 70) + 15; // Progress from 15% to 85%
-                    updateLoading(`Rendering frames (${frameCount}/${totalFrames})...`, percentComplete);
-                    debugLog(`Rendered ${frameCount}/${totalFrames} frames (${Math.round(frameCount / totalFrames * 100)}%)`);
-                }
-                
-                // Process next frame (use setTimeout to allow UI updates)
+                // Pre-render all frames
                 setTimeout(() => {
-                    renderNextFrame(frameIndex + 1);
-                }, 0);
-            };
-            
-            // Start rendering frames
-            renderNextFrame(0);
-        }
-        
-        // Finalize video generation
-        function finalizeVideo(transitionPoint, durationSeconds) {
-            updateLoading('Finalizing video with proper metadata...', 85);
-            debugLog('Finalizing WebM video with metadata');
-            
-            // Get the completed video with proper metadata
-            webmWriter.complete()
-                .then(function(webmBlob) {
-                    // Video generation complete
-                    updateLoading('Video generation complete!', 100);
-                    
-                    const url = URL.createObjectURL(webmBlob);
-                    const fileSizeMB = (webmBlob.size / (1024 * 1024)).toFixed(2);
-                    
-                    // Set download link with duration in filename
-                    elements.downloadLink.href = url;
-                    elements.downloadLink.download = `transition_${transitionPoint}pt_${durationSeconds.toFixed(1)}s.webm`;
-                    
-                    // Show download section
-                    elements.downloadContainer.style.display = 'flex';
-                    
-                    // Display success message with file size
-                    setStatusMessage(
-                        `Transition generated successfully! ${durationSeconds.toFixed(1)}-second video (${fileSizeMB} MB) with transition point at ${transitionPoint}%. WebM metadata properly set.`, 
-                        'success'
+                    preRenderFrames(
+                        transitionEffect,
+                        particleEffect,
+                        particleColor,
+                        particleDensity,
+                        transitionDuration * 1000,
+                        holdDuration * 1000,
+                        frameRate,
+                        useTransparency
                     );
-                    
-                    // Hide loading overlay after a short delay
-                    setTimeout(() => {
-                        hideLoading();
+                }, 100); // Small delay to allow the UI to update
+            }
+            
+            function preRenderFrames(effectName, particleEffectName, particleColor, particleDensity, 
+                                    transitionDuration, holdDuration, frameRate, useTransparency) {
+                const totalDuration = transitionDuration + holdDuration;
+                const totalFrames = Math.ceil(totalDuration / (1000 / frameRate));
+                
+                loadingStatusMessage.textContent = `Pre-rendering frames (0/${totalFrames})...`;
+                
+                // Create an offscreen canvas for rendering frames
+                const offscreenCanvas = document.createElement('canvas');
+                offscreenCanvas.width = WIDTH;
+                offscreenCanvas.height = HEIGHT;
+                const offscreenCtx = offscreenCanvas.getContext('2d');
+                
+                // Clear frames array
+                frames = [];
+                
+                // Pre-render each frame
+                let currentFrame = 0;
+                
+                function renderNextFrame() {
+                    if (currentFrame < totalFrames) {
+                        // Calculate time for this frame
+                        const frameTime = currentFrame * (1000 / frameRate);
                         
-                        // Reset UI
-                        elements.generateBtn.disabled = false;
-                        elements.previewBtn.disabled = false;
-                        elements.previewProgress.style.width = '100%';
+                        // Clear canvas with transparency if needed
+                        offscreenCtx.clearRect(0, 0, WIDTH, HEIGHT);
                         
-                        debugLog(`Video ready for download: ${durationSeconds.toFixed(1)}s, ${fileSizeMB} MB`);
-                    }, 1000);
-                })
-                .catch(function(error) {
-                    // Error finalizing video
-                    hideLoading();
-                    setStatusMessage(`Error generating video: ${error.message}`, 'error');
-                    debugLog(`Error finalizing video: ${error.message}`);
+                        // Render the frame
+                        renderFrame(
+                            frameTime,
+                            transitionDuration,
+                            holdDuration,
+                            effectName,
+                            particleEffectName
+                        );
+                        
+                        // Copy the main canvas to the offscreen canvas
+                        offscreenCtx.drawImage(canvas, 0, 0);
+                        
+                        // Store the frame data
+                        frames.push({
+                            imageData: offscreenCanvas.toDataURL('image/png'),
+                            timestamp: frameTime
+                        });
+                        
+                        // Update progress
+                        currentFrame++;
+                        const progress = (currentFrame / totalFrames) * 50; // First 50% of the process
+                        loadingProgressBar.style.width = `${progress}%`;
+                        loadingStatusMessage.textContent = `Pre-rendering frames (${currentFrame}/${totalFrames})...`;
+                        
+                        // Process next frame asynchronously to avoid blocking UI
+                        setTimeout(renderNextFrame, 0);
+                    } else {
+                        // All frames rendered, proceed to create video
+                        loadingStatusMessage.textContent = 'Creating video...';
+                        setTimeout(() => {
+                            createVideo(
+                                frames,
+                                frameRate,
+                                totalDuration,
+                                transitionPoint,
+                                useTransparency
+                            );
+                        }, 100);
+                    }
+                }
+                
+                // Start rendering frames
+                renderNextFrame();
+            }
+            
+            async function createVideo(frames, frameRate, totalDuration, transitionPoint, useTransparency) {
+                try {
+                    // Create recording canvas
+                    const recordCanvas = document.createElement('canvas');
+                    recordCanvas.width = WIDTH;
+                    recordCanvas.height = HEIGHT;
+                    const recordCtx = recordCanvas.getContext('2d');
                     
-                    // Reset UI
-                    elements.generateBtn.disabled = false;
-                    elements.previewBtn.disabled = false;
-                });
-        }
-
-        // Reset the generator for a new transition
-        function resetGenerator() {
-            // Stop any ongoing preview
-            stopPreviewPlayback();
-            
-            // Reset audio
-            if (audioSource) {
-                audioSource.stop();
-                audioSource = null;
+                    // Set up MediaRecorder with appropriate options
+                    const stream = recordCanvas.captureStream(frameRate);
+                    
+                    // Add audio track if present
+                    if (audioBlob) {
+                        // Create audio element for the recording
+                        const audioElement = new Audio();
+                        audioElement.src = URL.createObjectURL(audioBlob);
+                        
+                        // Set up audio context
+                        if (!audioContext) {
+                            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        }
+                        
+                        // Create media source from audio element
+                        const source = audioContext.createMediaElementSource(audioElement);
+                        const destination = audioContext.createMediaStreamDestination();
+                        
+                        // Connect audio
+                        source.connect(destination);
+                        
+                        // Add audio tracks to the stream
+                        destination.stream.getAudioTracks().forEach(track => {
+                            stream.addTrack(track);
+                        });
+                        
+                        // Play audio with the recording
+                        audioElement.play();
+                    }
+                    
+                    // Calculate video options
+                    const options = {
+                        mimeType: useTransparency ? 'video/webm;codecs=vp8' : 'video/webm;codecs=vp9',
+                        videoBitsPerSecond: 5000000 // 5 Mbps
+                    };
+                    
+                    // Create MediaRecorder
+                    const recorder = new MediaRecorder(stream, options);
+                    
+                    // Store recorded chunks
+                    const chunks = [];
+                    recorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) {
+                            chunks.push(e.data);
+                        }
+                    };
+                    
+                    // Handle recording completion
+                    recorder.onstop = async () => {
+                        try {
+                            // Combine chunks
+                            const recordedBlob = new Blob(chunks, { type: 'video/webm' });
+                            
+                            // Use fix-webm-duration to fix the metadata
+                            loadingStatusMessage.textContent = 'Fixing video metadata...';
+                            
+                            let fixedBlob;
+                            try {
+                                // Use the fix-webm-duration library
+                                fixedBlob = await new Promise((resolve) => {
+                                    ysFixWebmDuration(recordedBlob, totalDuration, resolve, { logger: false });
+                                });
+                            } catch (error) {
+                                console.error('Error fixing WebM duration:', error);
+                                fixedBlob = recordedBlob; // Use original blob if fixing fails
+                            }
+                            
+                            // Create download URL
+                            const transitionPointMs = Math.floor(totalDuration * (transitionPoint / 100));
+                            const durationSec = (totalDuration / 1000).toFixed(1);
+                            const filename = `transition_${transitionPointMs}ms_${durationSec}s.webm`;
+                            
+                            // Update UI with file info
+                            generatedBlob = fixedBlob;
+                            const fileSizeMB = (fixedBlob.size / (1024 * 1024)).toFixed(2);
+                            document.getElementById('fileInfo').textContent = 
+                                `Size: ${fileSizeMB} MB | Duration: ${durationSec}s | Transition Point: ${transitionPointMs}ms`;
+                            
+                            // Set download link
+                            const downloadBtn = document.getElementById('downloadBtn');
+                            downloadBtn.href = URL.createObjectURL(fixedBlob);
+                            downloadBtn.download = filename;
+                            
+                            // Update technical details
+                            document.getElementById('technicalDetails').textContent = 
+                                `Video Format: WebM ${useTransparency ? '(VP8 with alpha)' : '(VP9)'}\n` +
+                                `Resolution: ${WIDTH}x${HEIGHT} pixels\n` +
+                                `Frame Rate: ${frameRate} FPS\n` +
+                                `Total Frames: ${frames.length}\n` +
+                                `Transition Effect: ${document.getElementById('transitionEffect').value}\n` +
+                                `Particle Effect: ${document.getElementById('particleEffect').value}\n` +
+                                `OBS Transition Point: ${transitionPointMs}ms\n` +
+                                `File Size: ${fileSizeMB} MB`;
+                            
+                            // Show download section
+                            document.querySelector('.download-section').style.display = 'block';
+                            
+                            // Hide loading overlay
+                            loadingOverlay.style.display = 'none';
+                            
+                            // Scroll to download section
+                            document.querySelector('.download-section').scrollIntoView({ behavior: 'smooth' });
+                        } catch (error) {
+                            console.error('Error creating video:', error);
+                            loadingStatusMessage.textContent = 'Error creating video: ' + error.message;
+                            loadingOverlay.style.display = 'none';
+                        }
+                    };
+                    
+                    // Start recording
+                    recorder.start(1000); // Use 1-second time slices for better metadata
+                    
+                    // Track the recording start time
+                    const startTime = Date.now();
+                    let frameIndex = 0;
+                    let animationFrame = null;
+                    
+                    // Function to render each frame at the appropriate time
+                    function renderVideoFrame() {
+                        // Calculate elapsed time
+                        const elapsed = Date.now() - startTime;
+                        
+                        // Find the appropriate frame to render
+                        while (frameIndex < frames.length && frames[frameIndex].timestamp <= elapsed) {
+                            frameIndex++;
+                        }
+                        
+                        // Draw the current frame or the last frame if we've gone past all frames
+                        const frameToRender = frames[Math.min(frameIndex, frames.length - 1)];
+                        
+                        // Create an image from the frame data and draw it
+                        const img = new Image();
+                        img.onload = () => {
+                            recordCtx.clearRect(0, 0, WIDTH, HEIGHT);
+                            recordCtx.drawImage(img, 0, 0);
+                        };
+                        img.src = frameToRender.imageData;
+                        
+                        // Update progress
+                        const progress = 50 + (elapsed / totalDuration) * 50; // Last 50% of the process
+                        loadingProgressBar.style.width = `${Math.min(progress, 99)}%`;
+                        loadingStatusMessage.textContent = `Recording video... ${Math.floor(elapsed / totalDuration * 100)}%`;
+                        
+                        // Continue animation if we haven't reached the end
+                        if (elapsed < totalDuration) {
+                            animationFrame = requestAnimationFrame(renderVideoFrame);
+                        } else {
+                            // Stop recording
+                            recorder.stop();
+                            cancelAnimationFrame(animationFrame);
+                            loadingProgressBar.style.width = '100%';
+                            loadingStatusMessage.textContent = 'Finalizing video...';
+                        }
+                    }
+                    
+                    // Start rendering frames
+                    renderVideoFrame();
+                } catch (error) {
+                    console.error('Error in video creation:', error);
+                    loadingStatusMessage.textContent = 'Error creating video: ' + error.message;
+                    loadingOverlay.style.display = 'none';
+                }
             }
             
-            // Clear canvas
-            ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-            
-            // Hide download section
-            elements.downloadContainer.style.display = 'none';
-            
-            // Reset progress
-            elements.previewProgress.style.width = '0%';
-            
-            // Enable buttons
-            elements.generateBtn.disabled = false;
-            elements.previewBtn.disabled = false;
-            
-            // Clear status message
-            setStatusMessage('Ready to create a new transition.', 'info');
-            
-            debugLog('Generator reset');
-        }
-
-        // Check browser compatibility
-        function checkBrowserCompatibility() {
-            const incompatibilities = [];
-            
-            if (!window.MediaRecorder) {
-                incompatibilities.push('MediaRecorder API');
+            function resetApplication() {
+                // Hide download section
+                document.querySelector('.download-section').style.display = 'none';
+                
+                // Reset canvas
+                drawInitialCanvas();
+                
+                // Reset progress and status
+                progressBar.style.width = '0%';
+                statusMessage.textContent = 'Ready';
+                
+                // Revoke any object URLs to prevent memory leaks
+                if (generatedBlob) {
+                    URL.revokeObjectURL(document.getElementById('downloadBtn').href);
+                    generatedBlob = null;
+                }
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-            
-            if (typeof elements.previewCanvas.captureStream !== 'function') {
-                incompatibilities.push('Canvas.captureStream()');
-            }
-            
-            if (!window.AudioContext && !window.webkitAudioContext) {
-                incompatibilities.push('Web Audio API');
-            }
-            
-            if (incompatibilities.length > 0) {
-                setStatusMessage(`Your browser doesn't support: ${incompatibilities.join(', ')}. Some features may not work correctly. Please use a modern browser like Chrome or Firefox.`, 'error');
-                return false;
-            }
-            
-            return true;
-        }
-
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            init();
         });
     </script>
 </body>
