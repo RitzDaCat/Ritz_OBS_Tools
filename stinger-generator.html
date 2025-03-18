@@ -48,6 +48,14 @@
             font-size: 1.4rem;
         }
 
+        .section-heading {
+            background-color: #ecf0f1;
+            padding: 0.5rem;
+            margin: 1rem -1.5rem 1rem -1.5rem;
+            border-left: 4px solid #3498db;
+            font-weight: 600;
+        }
+
         /* Form elements */
         .setting-group {
             margin-bottom: 1rem;
@@ -280,6 +288,87 @@
             transition: width 0.3s;
         }
 
+        /* Audio upload styles */
+        .audio-control {
+            margin-top: 1rem;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        .audio-control.has-audio {
+            background-color: #e1f5fe;
+            border-color: #03a9f4;
+        }
+
+        .audio-feedback {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .audio-status {
+            flex: 1;
+        }
+
+        .audio-preview-btn {
+            background-color: #03a9f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        /* Timeline diagram */
+        .timeline-diagram {
+            width: 100%;
+            height: 70px;
+            margin: 1rem 0;
+            position: relative;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .timeline-section {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .timeline-intro {
+            left: 0;
+            background-color: #3498db;
+        }
+
+        .timeline-hold {
+            background-color: #2ecc71;
+        }
+
+        .timeline-outro {
+            right: 0;
+            background-color: #e74c3c;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
         /* Responsive layout */
         @media (min-width: 768px) {
             .container {
@@ -332,13 +421,48 @@
                     </div>
                 </div>
 
+                <!-- Audio Upload Area -->
+                <div class="panel">
+                    <h2>Audio Settings</h2>
+                    <div class="audio-control" id="audioControl">
+                        <input type="file" id="audioUpload" accept="audio/*">
+                        <label for="audioUpload">Upload Audio</label>
+                        <p class="hint">Supported formats: MP3, WAV, OGG (optional)</p>
+                        
+                        <div class="audio-feedback">
+                            <div class="audio-status" id="audioStatus">No audio selected</div>
+                            <button class="audio-preview-btn" id="audioPreviewBtn" style="display: none;">Play/Pause</button>
+                        </div>
+                        
+                        <div class="setting-group" style="margin-top: 1rem;">
+                            <label for="audioVolume">Audio Volume</label>
+                            <input type="range" id="audioVolume" min="0" max="100" value="100">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Transition Settings -->
                 <div class="panel">
                     <h2>Transition Settings</h2>
                     
+                    <!-- Timeline visualization -->
+                    <div class="timeline-diagram" id="timelineDiagram">
+                        <div class="timeline-section timeline-intro" id="timelineIntro">
+                            Intro Effect
+                        </div>
+                        <div class="timeline-section timeline-hold" id="timelineHold">
+                            Hold
+                        </div>
+                        <div class="timeline-section timeline-outro" id="timelineOutro">
+                            Outro Effect
+                        </div>
+                        <div class="timeline-marker" id="timelineMarker"></div>
+                    </div>
+                    
+                    <div class="section-heading">Intro Effect</div>
                     <div class="setting-group">
-                        <label for="transitionEffect">Transition Effect</label>
-                        <select id="transitionEffect">
+                        <label for="introEffect">Intro Effect</label>
+                        <select id="introEffect">
                             <option value="left-to-right">Left to Right</option>
                             <option value="right-to-left">Right to Left</option>
                             <option value="top-to-bottom">Top to Bottom</option>
@@ -359,6 +483,42 @@
                     </div>
                     
                     <div class="setting-group">
+                        <label for="introDuration">Intro Duration (seconds)</label>
+                        <input type="number" id="introDuration" min="0.5" max="10" step="0.1" value="1.5">
+                    </div>
+                    
+                    <div class="section-heading">Hold</div>
+                    <div class="setting-group">
+                        <label for="holdDuration">Hold Duration (seconds)</label>
+                        <input type="number" id="holdDuration" min="0" max="5" step="0.1" value="0.5">
+                    </div>
+                    
+                    <div class="section-heading">Outro Effect</div>
+                    <div class="setting-group">
+                        <label for="outroEffect">Outro Effect</label>
+                        <select id="outroEffect">
+                            <option value="none">None (End with Hold)</option>
+                            <option value="fade-out">Fade Out</option>
+                            <option value="right-to-left">Right to Left</option>
+                            <option value="left-to-right">Left to Right</option>
+                            <option value="top-to-bottom">Top to Bottom</option>
+                            <option value="bottom-to-top">Bottom to Top</option>
+                            <option value="zoom-out">Zoom Out</option>
+                            <option value="pixelate">Pixelate</option>
+                            <option value="circular-wipe-reverse">Circular Wipe (Reverse)</option>
+                            <option value="horizontal-split-reverse">Horizontal Split (Reverse)</option>
+                            <option value="vertical-split-reverse">Vertical Split (Reverse)</option>
+                            <option value="glitch">Glitch</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="outroDuration">Outro Duration (seconds)</label>
+                        <input type="number" id="outroDuration" min="0.5" max="10" step="0.1" value="1.0">
+                    </div>
+                    
+                    <div class="section-heading">Particle Effects</div>
+                    <div class="setting-group">
                         <label for="particleEffect">Particle Effect</label>
                         <select id="particleEffect">
                             <option value="none">None</option>
@@ -378,28 +538,15 @@
                         <input type="range" id="particleDensity" min="1" max="100" value="50">
                     </div>
                     
-                    <div class="setting-group">
-                        <label for="audioUpload">Audio (optional)</label>
-                        <input type="file" id="audioUpload" accept="audio/*">
-                        
-                        <label for="audioVolume">Audio Volume</label>
-                        <input type="range" id="audioVolume" min="0" max="100" value="100">
-                    </div>
-                    
-                    <div class="setting-group">
-                        <label for="transitionDuration">Transition Duration (seconds)</label>
-                        <input type="number" id="transitionDuration" min="0.5" max="10" step="0.1" value="1.5">
-                        
-                        <label for="holdDuration">Hold Duration (seconds)</label>
-                        <input type="number" id="holdDuration" min="0" max="5" step="0.1" value="0.5">
-                    </div>
-                    
+                    <div class="section-heading">OBS Settings</div>
                     <div class="setting-group">
                         <label for="transitionPoint">Transition Point (%)</label>
                         <input type="range" id="transitionPoint" min="1" max="100" value="50">
                         <span id="transitionPointValue">50%</span>
+                        <p class="hint">This is when OBS will switch scenes during the transition</p>
                     </div>
                     
+                    <div class="section-heading">Output Settings</div>
                     <div class="setting-group">
                         <label for="frameRate">Frame Rate</label>
                         <select id="frameRate">
@@ -485,6 +632,11 @@
             const loadingOverlay = document.getElementById('loadingOverlay');
             const loadingProgressBar = document.getElementById('loadingProgressBar');
             const loadingStatusMessage = document.getElementById('loadingStatusMessage');
+            const timelineDiagram = document.getElementById('timelineDiagram');
+            const timelineIntro = document.getElementById('timelineIntro');
+            const timelineHold = document.getElementById('timelineHold');
+            const timelineOutro = document.getElementById('timelineOutro');
+            const timelineMarker = document.getElementById('timelineMarker');
             
             // Global state variables
             let sourceImage = null;
@@ -499,6 +651,7 @@
             
             // Initialize UI event listeners
             initializeEventListeners();
+            updateTimeline();
             
             function initializeEventListeners() {
                 // Image upload
@@ -506,6 +659,7 @@
                 
                 // Audio upload
                 document.getElementById('audioUpload').addEventListener('change', handleAudioUpload);
+                document.getElementById('audioPreviewBtn').addEventListener('click', toggleAudioPreview);
                 
                 // Particle effect toggle
                 document.getElementById('particleEffect').addEventListener('change', function() {
@@ -523,6 +677,27 @@
                     updateTransitionMarker();
                 });
                 
+                // Duration inputs
+                document.getElementById('introDuration').addEventListener('input', updateTimeline);
+                document.getElementById('holdDuration').addEventListener('input', updateTimeline);
+                document.getElementById('outroDuration').addEventListener('input', updateTimeline);
+                document.getElementById('outroEffect').addEventListener('change', function() {
+                    const outroEffect = this.value;
+                    const outroDurationInput = document.getElementById('outroDuration');
+                    
+                    if (outroEffect === 'none') {
+                        outroDurationInput.disabled = true;
+                        outroDurationInput.value = 0;
+                    } else {
+                        outroDurationInput.disabled = false;
+                        if (outroDurationInput.value === '0') {
+                            outroDurationInput.value = 1.0;
+                        }
+                    }
+                    
+                    updateTimeline();
+                });
+                
                 // Preview and Generate buttons
                 document.getElementById('previewBtn').addEventListener('click', previewTransition);
                 document.getElementById('generateBtn').addEventListener('click', generateVideo);
@@ -534,10 +709,53 @@
                 document.getElementById('newTransitionBtn').addEventListener('click', resetApplication);
                 
                 // Update transition marker position on resize
-                window.addEventListener('resize', updateTransitionMarker);
+                window.addEventListener('resize', function() {
+                    updateTransitionMarker();
+                    updateTimeline();
+                });
                 
                 // Initial transition marker position
                 updateTransitionMarker();
+            }
+            
+            function updateTimeline() {
+                const introDuration = parseFloat(document.getElementById('introDuration').value);
+                const holdDuration = parseFloat(document.getElementById('holdDuration').value);
+                let outroDuration = parseFloat(document.getElementById('outroDuration').value);
+                
+                // If outro effect is "none", set outroDuration to 0
+                if (document.getElementById('outroEffect').value === 'none') {
+                    outroDuration = 0;
+                }
+                
+                const totalDuration = introDuration + holdDuration + outroDuration;
+                
+                // Calculate widths as percentages of total
+                const introWidth = (introDuration / totalDuration) * 100;
+                const holdWidth = (holdDuration / totalDuration) * 100;
+                const outroWidth = (outroDuration / totalDuration) * 100;
+                
+                // Update timeline sections
+                timelineIntro.style.width = `${introWidth}%`;
+                timelineHold.style.left = `${introWidth}%`;
+                timelineHold.style.width = `${holdWidth}%`;
+                timelineOutro.style.width = `${outroWidth}%`;
+                
+                // Update transition point marker
+                const transitionPoint = parseInt(document.getElementById('transitionPoint').value);
+                const markerPosition = (transitionPoint / 100) * 100; // Convert percentage to position
+                timelineMarker.style.left = `${markerPosition}%`;
+                
+                // Update section labels
+                timelineIntro.textContent = `Intro\n${introDuration}s`;
+                timelineHold.textContent = `Hold\n${holdDuration}s`;
+                
+                if (outroDuration > 0) {
+                    timelineOutro.textContent = `Outro\n${outroDuration}s`;
+                    timelineOutro.style.display = 'flex';
+                } else {
+                    timelineOutro.style.display = 'none';
+                }
             }
             
             function updateTransitionMarker() {
@@ -581,9 +799,39 @@
                     audioElement.src = URL.createObjectURL(audioBlob);
                     audioElement.volume = document.getElementById('audioVolume').value / 100;
                     
+                    // Update audio controls
+                    const audioControl = document.getElementById('audioControl');
+                    const audioStatus = document.getElementById('audioStatus');
+                    const audioPreviewBtn = document.getElementById('audioPreviewBtn');
+                    
+                    audioControl.classList.add('has-audio');
+                    audioStatus.textContent = `Audio: ${file.name} (${formatFileSize(file.size)})`;
+                    audioPreviewBtn.style.display = 'block';
+                    
                     statusMessage.textContent = 'Audio loaded';
                 };
                 reader.readAsArrayBuffer(file);
+            }
+            
+            function toggleAudioPreview() {
+                if (!audioElement) return;
+                
+                if (audioElement.paused) {
+                    audioElement.play();
+                } else {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                }
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes < 1024) {
+                    return bytes + ' B';
+                } else if (bytes < 1024 * 1024) {
+                    return (bytes / 1024).toFixed(1) + ' KB';
+                } else {
+                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                }
             }
             
             function drawInitialCanvas() {
@@ -609,15 +857,24 @@
                     stopPlayback();
                 }
                 
-                const transitionEffect = document.getElementById('transitionEffect').value;
+                const introEffect = document.getElementById('introEffect').value;
+                const outroEffect = document.getElementById('outroEffect').value;
                 const particleEffect = document.getElementById('particleEffect').value;
-                const transitionDuration = parseFloat(document.getElementById('transitionDuration').value) * 1000; // Convert to ms
+                const introDuration = parseFloat(document.getElementById('introDuration').value) * 1000; // Convert to ms
                 const holdDuration = parseFloat(document.getElementById('holdDuration').value) * 1000; // Convert to ms
-                const totalDuration = transitionDuration + holdDuration;
+                let outroDuration = parseFloat(document.getElementById('outroDuration').value) * 1000; // Convert to ms
+                
+                // If outro effect is "none", set outroDuration to 0
+                if (outroEffect === 'none') {
+                    outroDuration = 0;
+                }
+                
+                const totalDuration = introDuration + holdDuration + outroDuration;
                 
                 // Reset audio if present
                 if (audioElement) {
                     audioElement.currentTime = 0;
+                    audioElement.volume = document.getElementById('audioVolume').value / 100;
                 }
                 
                 // Start playback
@@ -637,8 +894,8 @@
                     // Update progress bar
                     progressBar.style.width = `${progress * 100}%`;
                     
-                    // Render the current frame
-                    renderFrame(elapsed, transitionDuration, holdDuration, transitionEffect, particleEffect);
+                    // Render the current frame based on which phase we're in
+                    renderTransitionFrame(elapsed, introDuration, holdDuration, outroDuration, introEffect, outroEffect, particleEffect);
                     
                     // Continue animation if not complete
                     if (progress < 1 && isPlaying) {
@@ -670,6 +927,7 @@
                 
                 if (audioElement) {
                     audioElement.pause();
+                    audioElement.currentTime = 0;
                 }
                 
                 // Reset canvas to initial state
@@ -678,26 +936,56 @@
                 statusMessage.textContent = 'Ready';
             }
             
-            function renderFrame(elapsed, transitionDuration, holdDuration, effectName, particleEffectName) {
+            function renderTransitionFrame(elapsed, introDuration, holdDuration, outroDuration, introEffect, outroEffect, particleEffect) {
                 ctx.clearRect(0, 0, WIDTH, HEIGHT);
                 
                 if (!sourceImage) return;
                 
-                // Calculate transition progress (0 to 1)
-                let transitionProgress = Math.min(elapsed / transitionDuration, 1);
-                
-                // Apply the selected transition effect
-                applyTransitionEffect(ctx, sourceImage, transitionProgress, effectName);
+                // Determine which phase we're in
+                if (elapsed <= introDuration) {
+                    // Phase 1: Intro effect
+                    const introProgress = elapsed / introDuration;
+                    applyTransitionEffect(ctx, sourceImage, introProgress, introEffect, false);
+                    
+                    // Show status
+                    statusMessage.textContent = `Intro: ${Math.floor(introProgress * 100)}%`;
+                } else if (elapsed <= introDuration + holdDuration) {
+                    // Phase 2: Hold
+                    applyTransitionEffect(ctx, sourceImage, 1, introEffect, false);
+                    
+                    // Show status
+                    const holdElapsed = elapsed - introDuration;
+                    const holdProgress = holdElapsed / holdDuration;
+                    statusMessage.textContent = `Hold: ${Math.floor(holdProgress * 100)}%`;
+                } else {
+                    // Phase 3: Outro effect
+                    const outroElapsed = elapsed - (introDuration + holdDuration);
+                    const outroProgress = outroElapsed / outroDuration;
+                    
+                    if (outroEffect === 'none') {
+                        // Just show the final frame of the intro effect
+                        applyTransitionEffect(ctx, sourceImage, 1, introEffect, false);
+                    } else {
+                        // Apply the outro effect
+                        applyTransitionEffect(ctx, sourceImage, outroProgress, outroEffect, true);
+                    }
+                    
+                    // Show status
+                    statusMessage.textContent = `Outro: ${Math.floor(outroProgress * 100)}%`;
+                }
                 
                 // Apply particle effects if selected
-                if (particleEffectName !== 'none') {
+                if (particleEffect !== 'none') {
                     const particleColor = document.getElementById('particleColor').value;
                     const particleDensity = parseInt(document.getElementById('particleDensity').value);
-                    applyParticleEffect(ctx, transitionProgress, particleEffectName, particleColor, particleDensity);
+                    
+                    // Calculate global progress for particles
+                    const globalProgress = Math.min(elapsed / (introDuration + holdDuration + outroDuration), 1);
+                    applyParticleEffect(ctx, globalProgress, particleEffect, particleColor, particleDensity);
                 }
             }
             
-            function applyTransitionEffect(ctx, image, progress, effectName) {
+            function applyTransitionEffect(ctx, image, progress, effectName, isOutro) {
                 // Calculate image position for centered drawing
                 const scale = Math.min(WIDTH / image.width, HEIGHT / image.height);
                 const scaledWidth = image.width * scale;
@@ -705,10 +993,27 @@
                 const x = (WIDTH - scaledWidth) / 2;
                 const y = (HEIGHT - scaledHeight) / 2;
                 
+                // For outro effects, invert progress if needed
+                let effectProgress = progress;
+                if (isOutro) {
+                    // For some effects, we use inverted progress for the outro
+                    if (effectName.includes('reverse')) {
+                        effectProgress = 1 - progress;
+                        // Remove "-reverse" from effectName to get the base effect
+                        effectName = effectName.replace('-reverse', '');
+                    } else if (effectName === 'fade-out') {
+                        effectProgress = 1 - progress;
+                        effectName = 'fade-in'; // Reuse fade-in logic with inverted progress
+                    } else if (effectName === 'zoom-out') {
+                        effectProgress = 1 - progress;
+                        effectName = 'zoom-in'; // Reuse zoom-in logic with inverted progress
+                    }
+                }
+                
                 // Apply the requested effect based on name
                 switch (effectName) {
                     case 'left-to-right':
-                        const clipWidth = WIDTH * progress;
+                        const clipWidth = WIDTH * effectProgress;
                         ctx.save();
                         ctx.beginPath();
                         ctx.rect(0, 0, clipWidth, HEIGHT);
@@ -718,7 +1023,7 @@
                         break;
                         
                     case 'right-to-left':
-                        const rightClipWidth = WIDTH * progress;
+                        const rightClipWidth = WIDTH * effectProgress;
                         ctx.save();
                         ctx.beginPath();
                         ctx.rect(WIDTH - rightClipWidth, 0, rightClipWidth, HEIGHT);
@@ -728,7 +1033,7 @@
                         break;
                         
                     case 'top-to-bottom':
-                        const clipHeight = HEIGHT * progress;
+                        const clipHeight = HEIGHT * effectProgress;
                         ctx.save();
                         ctx.beginPath();
                         ctx.rect(0, 0, WIDTH, clipHeight);
@@ -738,7 +1043,7 @@
                         break;
                         
                     case 'bottom-to-top':
-                        const bottomClipHeight = HEIGHT * progress;
+                        const bottomClipHeight = HEIGHT * effectProgress;
                         ctx.save();
                         ctx.beginPath();
                         ctx.rect(0, HEIGHT - bottomClipHeight, WIDTH, bottomClipHeight);
@@ -748,13 +1053,13 @@
                         break;
                         
                     case 'fade-in':
-                        ctx.globalAlpha = progress;
+                        ctx.globalAlpha = effectProgress;
                         ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
                         ctx.globalAlpha = 1;
                         break;
                         
                     case 'zoom-in':
-                        const zoomScale = 0.5 + (progress * 0.5);
+                        const zoomScale = 0.5 + (effectProgress * 0.5);
                         const zoomWidth = scaledWidth * zoomScale;
                         const zoomHeight = scaledHeight * zoomScale;
                         const zoomX = (WIDTH - zoomWidth) / 2;
@@ -765,7 +1070,7 @@
                     case 'pixelate':
                         // Create a pixelated version of the image with decreasing pixel size
                         const maxPixelSize = 32;
-                        const pixelSize = Math.max(1, Math.floor(maxPixelSize * (1 - progress)));
+                        const pixelSize = Math.max(1, Math.floor(maxPixelSize * (1 - effectProgress)));
                         
                         // Draw in low resolution to temporary canvas
                         const tempCanvas = document.createElement('canvas');
@@ -782,7 +1087,7 @@
                         break;
                         
                     case 'circular-wipe':
-                        const radius = Math.sqrt(WIDTH * WIDTH + HEIGHT * HEIGHT) * progress;
+                        const radius = Math.sqrt(WIDTH * WIDTH + HEIGHT * HEIGHT) * effectProgress;
                         ctx.save();
                         ctx.beginPath();
                         ctx.arc(WIDTH / 2, HEIGHT / 2, radius, 0, Math.PI * 2);
@@ -792,7 +1097,7 @@
                         break;
                         
                     case 'horizontal-split':
-                        const splitHeight = HEIGHT / 2 * progress;
+                        const splitHeight = HEIGHT / 2 * effectProgress;
                         
                         // Top half
                         ctx.save();
@@ -812,7 +1117,7 @@
                         break;
                         
                     case 'vertical-split':
-                        const splitWidth = WIDTH / 2 * progress;
+                        const splitWidth = WIDTH / 2 * effectProgress;
                         
                         // Left half
                         ctx.save();
@@ -833,7 +1138,7 @@
                         
                     case 'glitch':
                         // Create a glitch effect with random offsets
-                        const intensity = 0.5 - Math.abs(0.5 - progress);
+                        const intensity = 0.5 - Math.abs(0.5 - effectProgress);
                         
                         // Draw the base image
                         ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
@@ -881,7 +1186,7 @@
                         // We'll manually implement using a temporary canvas and varying blur levels
                         
                         // Calculate blur amount (max at start, clear at end)
-                        const blurAmount = 20 * (1 - progress);
+                        const blurAmount = 20 * (1 - effectProgress);
                         
                         if (blurAmount <= 0) {
                             // Just draw the image normally when fully clear
@@ -913,7 +1218,7 @@
                         ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
                         
                         // Apply grayscale filter with decreasing intensity
-                        const grayscaleIntensity = 1 - progress;
+                        const grayscaleIntensity = 1 - effectProgress;
                         
                         if (grayscaleIntensity > 0) {
                             // Get image data
@@ -939,7 +1244,7 @@
                     case 'venetian-blinds':
                         const blinds = 20; // Number of blinds
                         const blindHeight = HEIGHT / blinds;
-                        const blindWidth = WIDTH * progress;
+                        const blindWidth = WIDTH * effectProgress;
                         
                         for (let i = 0; i < blinds; i++) {
                             ctx.save();
@@ -954,13 +1259,13 @@
                     case 'diagonal-wipe':
                         // Calculate the diagonal length of the canvas
                         const diagonal = Math.sqrt(WIDTH * WIDTH + HEIGHT * HEIGHT);
-                        const diagonalProgress = diagonal * progress;
+                        const diagonalProgress = diagonal * effectProgress;
                         
                         // Calculate the equation of the moving line
                         // Line equation: ax + by + c = 0
                         const a = HEIGHT / WIDTH;
                         const b = -1;
-                        const c = -WIDTH * progress;
+                        const c = -WIDTH * effectProgress;
                         
                         ctx.save();
                         ctx.beginPath();
@@ -970,7 +1275,7 @@
                         ctx.lineTo(WIDTH, 0);
                         
                         // Check if the line has entered the canvas from the right
-                        if (progress > WIDTH / diagonal) {
+                        if (effectProgress > WIDTH / diagonal) {
                             ctx.lineTo(WIDTH, (a * WIDTH + c) / -b);
                         } else {
                             ctx.lineTo(c / -a, 0);
@@ -987,19 +1292,19 @@
                         
                     case 'bounce':
                         // Bounce effect with easing
-                        let bounceProgress = progress;
+                        let bounceProgress = effectProgress;
                         
                         // Apply an elastic bounce curve
-                        if (progress < 0.9) {
+                        if (effectProgress < 0.9) {
                             // Scale up as we progress
-                            const elasticScale = 1 + Math.sin(progress * Math.PI) * 0.1;
+                            const elasticScale = 1 + Math.sin(effectProgress * Math.PI) * 0.1;
                             const bounceX = (WIDTH - scaledWidth * elasticScale) / 2;
                             const bounceY = (HEIGHT - scaledHeight * elasticScale) / 2;
                             
                             ctx.drawImage(image, bounceX, bounceY, scaledWidth * elasticScale, scaledHeight * elasticScale);
                         } else {
                             // Settle to normal size in the last 10%
-                            const finalProgress = (progress - 0.9) / 0.1;
+                            const finalProgress = (effectProgress - 0.9) / 0.1;
                             const finalScale = 1.1 - (finalProgress * 0.1);
                             const finalX = (WIDTH - scaledWidth * finalScale) / 2;
                             const finalY = (HEIGHT - scaledHeight * finalScale) / 2;
@@ -1309,11 +1614,19 @@
                 }
                 
                 // Get settings
-                const transitionEffect = document.getElementById('transitionEffect').value;
+                const introEffect = document.getElementById('introEffect').value;
+                const outroEffect = document.getElementById('outroEffect').value;
                 const particleEffect = document.getElementById('particleEffect').value;
-                const transitionDuration = parseFloat(document.getElementById('transitionDuration').value);
+                const introDuration = parseFloat(document.getElementById('introDuration').value);
                 const holdDuration = parseFloat(document.getElementById('holdDuration').value);
-                const totalDuration = transitionDuration + holdDuration;
+                let outroDuration = parseFloat(document.getElementById('outroDuration').value);
+                
+                // If outro effect is "none", set outroDuration to 0
+                if (outroEffect === 'none') {
+                    outroDuration = 0;
+                }
+                
+                const totalDuration = introDuration + holdDuration + outroDuration;
                 const frameRate = parseInt(document.getElementById('frameRate').value);
                 const transitionPoint = parseInt(document.getElementById('transitionPoint').value);
                 const useTransparency = document.getElementById('transparencyToggle').checked;
@@ -1330,21 +1643,23 @@
                 // Pre-render all frames
                 setTimeout(() => {
                     preRenderFrames(
-                        transitionEffect,
+                        introEffect,
+                        outroEffect,
                         particleEffect,
                         particleColor,
                         particleDensity,
-                        transitionDuration * 1000,
+                        introDuration * 1000,
                         holdDuration * 1000,
+                        outroDuration * 1000,
                         frameRate,
                         useTransparency
                     );
                 }, 100); // Small delay to allow the UI to update
             }
             
-            function preRenderFrames(effectName, particleEffectName, particleColor, particleDensity, 
-                                    transitionDuration, holdDuration, frameRate, useTransparency) {
-                const totalDuration = transitionDuration + holdDuration;
+            function preRenderFrames(introEffect, outroEffect, particleEffect, particleColor, particleDensity, 
+                                    introDuration, holdDuration, outroDuration, frameRate, useTransparency) {
+                const totalDuration = introDuration + holdDuration + outroDuration;
                 const totalFrames = Math.ceil(totalDuration / (1000 / frameRate));
                 
                 loadingStatusMessage.textContent = `Pre-rendering frames (0/${totalFrames})...`;
@@ -1369,13 +1684,15 @@
                         // Clear canvas with transparency if needed
                         offscreenCtx.clearRect(0, 0, WIDTH, HEIGHT);
                         
-                        // Render the frame
-                        renderFrame(
+                        // Render the frame for the current time
+                        renderTransitionFrame(
                             frameTime,
-                            transitionDuration,
+                            introDuration,
                             holdDuration,
-                            effectName,
-                            particleEffectName
+                            outroDuration,
+                            introEffect,
+                            outroEffect,
+                            particleEffect
                         );
                         
                         // Copy the main canvas to the offscreen canvas
@@ -1427,29 +1744,39 @@
                     
                     // Add audio track if present
                     if (audioBlob) {
-                        // Create audio element for the recording
-                        const audioElement = new Audio();
-                        audioElement.src = URL.createObjectURL(audioBlob);
-                        
-                        // Set up audio context
-                        if (!audioContext) {
-                            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        try {
+                            // Create audio element for the recording
+                            const audioElement = new Audio();
+                            audioElement.src = URL.createObjectURL(audioBlob);
+                            
+                            // Set volume
+                            audioElement.volume = document.getElementById('audioVolume').value / 100;
+                            
+                            // Set up audio context
+                            if (!audioContext) {
+                                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            }
+                            
+                            // Create media source from audio element
+                            const source = audioContext.createMediaElementSource(audioElement);
+                            const destination = audioContext.createMediaStreamDestination();
+                            
+                            // Connect audio
+                            source.connect(destination);
+                            
+                            // Add audio tracks to the stream
+                            destination.stream.getAudioTracks().forEach(track => {
+                                stream.addTrack(track);
+                            });
+                            
+                            // Play audio with the recording
+                            audioElement.play();
+                            
+                            loadingStatusMessage.textContent = 'Creating video with audio...';
+                        } catch (error) {
+                            console.error('Error adding audio to video:', error);
+                            loadingStatusMessage.textContent = 'Creating video without audio (audio error)...';
                         }
-                        
-                        // Create media source from audio element
-                        const source = audioContext.createMediaElementSource(audioElement);
-                        const destination = audioContext.createMediaStreamDestination();
-                        
-                        // Connect audio
-                        source.connect(destination);
-                        
-                        // Add audio tracks to the stream
-                        destination.stream.getAudioTracks().forEach(track => {
-                            stream.addTrack(track);
-                        });
-                        
-                        // Play audio with the recording
-                        audioElement.play();
                     }
                     
                     // Calculate video options
@@ -1505,15 +1832,25 @@
                             downloadBtn.href = URL.createObjectURL(fixedBlob);
                             downloadBtn.download = filename;
                             
+                            // Get the effect names (formatting for display)
+                            const introEffectName = document.getElementById('introEffect').options[document.getElementById('introEffect').selectedIndex].text;
+                            let outroEffectName = 'None';
+                            if (document.getElementById('outroEffect').value !== 'none') {
+                                outroEffectName = document.getElementById('outroEffect').options[document.getElementById('outroEffect').selectedIndex].text;
+                            }
+                            
                             // Update technical details
                             document.getElementById('technicalDetails').textContent = 
                                 `Video Format: WebM ${useTransparency ? '(VP8 with alpha)' : '(VP9)'}\n` +
                                 `Resolution: ${WIDTH}x${HEIGHT} pixels\n` +
                                 `Frame Rate: ${frameRate} FPS\n` +
                                 `Total Frames: ${frames.length}\n` +
-                                `Transition Effect: ${document.getElementById('transitionEffect').value}\n` +
-                                `Particle Effect: ${document.getElementById('particleEffect').value}\n` +
+                                `Intro Effect: ${introEffectName}\n` +
+                                `Hold Duration: ${document.getElementById('holdDuration').value}s\n` +
+                                `Outro Effect: ${outroEffectName}\n` +
+                                `Particle Effect: ${document.getElementById('particleEffect').options[document.getElementById('particleEffect').selectedIndex].text}\n` +
                                 `OBS Transition Point: ${transitionPointMs}ms\n` +
+                                `Has Audio: ${audioBlob ? 'Yes' : 'No'}\n` +
                                 `File Size: ${fileSizeMB} MB`;
                             
                             // Show download section
