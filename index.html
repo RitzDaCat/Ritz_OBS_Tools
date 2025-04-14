@@ -62,6 +62,8 @@
             box-shadow: var(--shadow);
             overflow: hidden;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex; /* Use flexbox for card layout */
+            flex-direction: column; /* Stack image and content vertically */
         }
 
         .tool-card:hover {
@@ -76,11 +78,13 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            flex-shrink: 0; /* Prevent image area from shrinking */
         }
 
         .tool-image img {
             max-width: 100%;
             height: auto;
+            display: block; /* Remove extra space below image */
         }
 
         .tool-image.placeholder {
@@ -92,6 +96,9 @@
 
         .tool-content {
             padding: 1.5rem;
+            display: flex; /* Use flexbox for content layout */
+            flex-direction: column; /* Stack content vertically */
+            flex-grow: 1; /* Allow content to fill remaining space */
         }
 
         .tool-content h2 {
@@ -103,6 +110,7 @@
         .tool-content p {
             margin-bottom: 1.5rem;
             color: #666;
+            flex-grow: 1; /* Allow paragraph to push link down */
         }
 
         .tool-link {
@@ -114,18 +122,20 @@
             border-radius: 4px;
             font-weight: 500;
             transition: background-color 0.3s ease;
+            align-self: flex-start; /* Align button to the start */
         }
 
         .tool-link:hover {
             background-color: var(--primary-dark);
         }
 
-        .coming-soon {
-            opacity: 0.7;
-            position: relative;
-        }
-
-        .coming-soon::after {
+        /* Removed .coming-soon::after as it's no longer needed for the second card */
+        /* Keep if needed for other cards */
+         .tool-card.coming-soon {
+             opacity: 0.7;
+             position: relative;
+         }
+        .tool-card.coming-soon::after {
             content: "Coming Soon";
             position: absolute;
             top: 10px;
@@ -135,7 +145,13 @@
             padding: 5px 10px;
             border-radius: 4px;
             font-size: 0.8rem;
+            z-index: 1; /* Ensure it's above content */
         }
+         .tool-card.coming-soon .tool-link {
+             pointer-events: none;
+             background-color: #aaa; /* Grey out button */
+         }
+
 
         footer {
             text-align: center;
@@ -148,7 +164,7 @@
             .tools-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             header h1 {
                 font-size: 2rem;
             }
@@ -176,34 +192,30 @@
                 </div>
             </div>
 
-            <div class="tool-card coming-soon">
+            <div class="tool-card">
                 <div class="tool-image placeholder">
-                    <span>?</span>
-                </div>
+                    <span>💬</span> </div>
                 <div class="tool-content">
-                    <h2>Stream Overlay Creator</h2>
-                    <p>Design custom overlays, alerts and frames for your livestreams with an easy-to-use visual editor.</p>
-                    <a href="#" class="tool-link" style="pointer-events: none;">Coming Soon</a>
-                </div>
+                    <h2>OBS Quote Widget Builder</h2> <p>Create a customizable chat bubble widget that cycles through quotes for your OBS stream. Features themes and save/load functionality.</p> <a href="quote_widget.html" class="tool-link">Open Tool</a> </div>
             </div>
 
             <div class="tool-card coming-soon">
                 <div class="tool-image placeholder">
-                    <span>?</span>
-                </div>
+                    <span>📅</span> </div>
                 <div class="tool-content">
                     <h2>Stream Schedule Generator</h2>
                     <p>Create beautiful stream schedule images to share on social media with customizable templates.</p>
-                    <a href="#" class="tool-link" style="pointer-events: none;">Coming Soon</a>
+                    <a href="#" class="tool-link">Coming Soon</a>
                 </div>
             </div>
-        </div>
+
+             </div>
     </div>
 
     <footer>
         <div class="container">
             <p>© 2025 Stream Tools Hub. All tools are open source and free to use.</p>
-            <p>Contribute on <a href="https://github.com/yourusername/stream-tools-hub" target="_blank">GitHub</a></p>
+            <p>Contribute on <a href="https://github.com/yourusername/stream-tools-hub" target="_blank" rel="noopener noreferrer">GitHub</a></p>
         </div>
     </footer>
 </body>
