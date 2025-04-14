@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Quote Widget Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Inter font globally by default */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Base style for the preview chat bubble */
+        #quote-preview-bubble {
+            position: relative; /* Needed for the tail */
+            padding: 1rem;
+            border-radius: 0.75rem; /* Default */
+            max-width: 300px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Default */
+            transition: all 0.5s ease-in-out;
+            overflow: hidden;
+            /* Default theme values set via JS initially */
+        }
+
+        /* Style for the chat bubble tail */
+        #quote-preview-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top-width: 10px;
+            border-top-style: solid;
+            border-top-color: inherit; /* Inherits background color */
+            transition: border-top-color 0.3s ease; /* Smooth color transition */
+        }
+
+        /* --- Theme Styles --- */
+
+        /* Default Theme (applied by default, styles controlled by inputs) */
+        /* No specific class needed, styles are applied directly */
+
+        /* iPhone Theme */
+        .theme-iphone {
+            background-color: #007AFF !important; /* iOS Blue */
+            color: #ffffff !important; /* White text */
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            border-radius: 1.25rem !important; /* More rounded */
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important; /* Subtle shadow */
+        }
+        .theme-iphone::after {
+             border-top-color: #007AFF !important;
+        }
+
+        /* Animal Crossing Theme */
+        .theme-animal-crossing {
+            background-color: #F5E1A4 !important; /* Beige/Wood color */
+            color: #6B4F34 !important; /* Dark brown text */
+            font-family: 'Nunito', sans-serif !important; /* Rounded, friendly font */
+            border-radius: 0.5rem !important; /* Less rounded, more like AC dialog */
+            border: 2px solid #D3B87E; /* Slightly darker border */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        }
+         .theme-animal-crossing::after {
+             /* Simple triangle tail */
+             border-top-color: #F5E1A4 !important;
+             bottom: -10px; /* Adjust if needed */
+             /* Optional: Could try a different tail shape later */
+        }
+
+
+        /* Animation for quote fading */
+        .quote-fade-enter { opacity: 0; transform: translateY(10px); }
+        .quote-fade-exit { opacity: 1; transform: translateY(0); }
+        .quote-fade-exit-active { opacity: 0; transform: translateY(-10px); transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
+        .quote-fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; transition-delay: 0.5s; }
+
+        /* Ensure generated code textarea scrolls */
+        #generated-code { min-height: 200px; white-space: pre; word-wrap: normal; overflow-x: scroll; }
+
+        /* Basic styling for file input */
+        input[type="file"] { border: 1px solid #ccc; display: inline-block; padding: 6px 12px; cursor: pointer; border-radius: 0.375rem; }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">OBS Quote Widget Builder</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">Configuration</h2>
+
+                <div>
+                    <label for="theme-select" class="block text-sm font-medium text-gray-700 mb-1">Theme:</label>
+                    <select id="theme-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="default">Default</option>
+                        <option value="theme-iphone">iPhone Message</option>
+                        <option value="theme-animal-crossing">Animal Crossing</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="quotes-input" class="block text-sm font-medium text-gray-700 mb-1">Quotes (one per line):</label>
+                    <textarea id="quotes-input" rows="6" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your quotes here, one on each line..."></textarea>
+                </div>
+
+                <h3 class="text-lg font-medium text-gray-600 pt-2">Customize Style</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="bg-color" class="block text-sm font-medium text-gray-700 mb-1">Background Color:</label>
+                        <input type="color" id="bg-color" value="#ffffff" class="w-full h-10 border border-gray-300 rounded-md cursor-pointer">
+                    </div>
+                    <div>
+                        <label for="text-color" class="block text-sm font-medium text-gray-700 mb-1">Text Color:</label>
+                        <input type="color" id="text-color" value="#000000" class="w-full h-10 border border-gray-300 rounded-md cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                     <div>
+                        <label for="font-select" class="block text-sm font-medium text-gray-700 mb-1">Font:</label>
+                        <select id="font-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="'Nunito', sans-serif">Nunito</option> <option value="'Arial', sans-serif">Arial</option>
+                            <option value="'Verdana', sans-serif">Verdana</option>
+                            <option value="'Georgia', serif">Georgia</option>
+                            <option value="'Times New Roman', serif">Times New Roman</option>
+                            <option value="'Courier New', monospace">Courier New</option>
+                            <option value="'Lucida Console', monospace">Lucida Console</option>
+                             <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">System UI</option> </select>
+                    </div>
+                    <div>
+                        <label for="font-size" class="block text-sm font-medium text-gray-700 mb-1">Font Size (px):</label>
+                        <input type="number" id="font-size" value="16" min="8" max="72" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                 <div>
+                    <label for="border-radius" class="block text-sm font-medium text-gray-700 mb-1">Border Radius (rem):</label>
+                    <input type="number" id="border-radius" value="0.75" min="0" max="5" step="0.05" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                 <div>
+                    <label for="cycle-duration" class="block text-sm font-medium text-gray-700 mb-1">Cycle Duration (seconds):</label>
+                    <input type="number" id="cycle-duration" value="10" min="1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div class="flex space-x-4">
+                    <button id="save-config" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">Save Config</button>
+                    <label for="load-config-input" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out cursor-pointer text-center">
+                        Load Config
+                    </label>
+                    <input type="file" id="load-config-input" accept=".json" class="hidden">
+                </div>
+                 <div id="status-message" class="text-sm text-gray-600 h-4 mt-2"></div>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Preview</h2>
+                    <div class="flex justify-center items-center p-4 bg-gray-200 rounded-md min-h-[150px]">
+                         <div id="quote-preview-container" class="relative">
+                            {/* Removed inline styles, will be controlled by JS/CSS classes */}
+                            <div id="quote-preview-bubble">
+                                <span id="quote-preview-text">Your quote will appear here!</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="generate-code" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">Generate Widget Code</button>
+
+                <div>
+                    <label for="generated-code" class="block text-sm font-medium text-gray-700 mb-1">Generated HTML Code (Copy this into OBS Browser Source):</label>
+                    <textarea id="generated-code" readonly class="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 font-mono text-sm" placeholder="Generated code will appear here..."></textarea>
+                    <button id="copy-code" class="mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-md text-sm transition duration-150 ease-in-out">Copy Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const themeSelect = document.getElementById('theme-select');
+        const quotesInput = document.getElementById('quotes-input');
+        const bgColorInput = document.getElementById('bg-color');
+        const textColorInput = document.getElementById('text-color');
+        const fontSelect = document.getElementById('font-select');
+        const fontSizeInput = document.getElementById('font-size');
+        const borderRadiusInput = document.getElementById('border-radius'); // Added
+        const cycleDurationInput = document.getElementById('cycle-duration');
+        const previewBubble = document.getElementById('quote-preview-bubble');
+        const previewText = document.getElementById('quote-preview-text');
+        const generateCodeButton = document.getElementById('generate-code');
+        const generatedCodeTextarea = document.getElementById('generated-code');
+        const saveConfigButton = document.getElementById('save-config');
+        const loadConfigInput = document.getElementById('load-config-input');
+        const copyCodeButton = document.getElementById('copy-code');
+        const statusMessageElement = document.getElementById('status-message'); // For user feedback
+
+        // --- State ---
+        let quotes = [];
+        let currentQuoteIndex = 0;
+        let cycleIntervalId = null;
+        let currentConfig = {}; // To store the current configuration
+        let statusTimeoutId = null; // For clearing status messages
+
+        // --- Theme Definitions ---
+        const themes = {
+            "default": {
+                name: "Default",
+                bgColor: "#ffffff",
+                textColor: "#000000",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "16",
+                borderRadius: "0.75", // rem
+                className: "" // No specific class for default
+            },
+            "theme-iphone": {
+                name: "iPhone Message",
+                bgColor: "#007AFF",
+                textColor: "#ffffff",
+                fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+                fontSize: "17", // Typical iOS size
+                borderRadius: "1.25", // rem
+                className: "theme-iphone"
+            },
+            "theme-animal-crossing": {
+                name: "Animal Crossing",
+                bgColor: "#F5E1A4",
+                textColor: "#6B4F34",
+                fontFamily: "'Nunito', sans-serif",
+                fontSize: "16",
+                borderRadius: "0.5", // rem
+                className: "theme-animal-crossing"
+            }
+        };
+
+        // --- Functions ---
+
+         /**
+         * Displays a status message to the user for a short duration.
+         * @param {string} message - The message to display.
+         * @param {boolean} isError - If true, displays the message in red.
+         */
+        function showStatusMessage(message, isError = false) {
+            if (statusTimeoutId) {
+                clearTimeout(statusTimeoutId); // Clear previous timeout
+            }
+            statusMessageElement.textContent = message;
+            statusMessageElement.style.color = isError ? '#dc2626' : '#4b5563'; // Red for error, gray otherwise
+            // Clear the message after 3 seconds
+            statusTimeoutId = setTimeout(() => {
+                statusMessageElement.textContent = '';
+                statusTimeoutId = null;
+            }, 3000);
+        }
+
+        /**
+         * Parses quotes from the textarea input.
+         * @returns {string[]} An array of non-empty quotes.
+         */
+        function parseQuotes() {
+            return quotesInput.value.split('\n').map(q => q.trim()).filter(q => q.length > 0);
+        }
+
+        /**
+         * Applies a selected theme's styles to the input controls and preview.
+         * @param {string} themeKey - The key of the theme to apply (e.g., 'default', 'theme-iphone').
+         */
+        function applyTheme(themeKey) {
+            const theme = themes[themeKey];
+            if (!theme) return;
+
+            // Update input controls
+            bgColorInput.value = theme.bgColor;
+            textColorInput.value = theme.textColor;
+            fontSelect.value = theme.fontFamily;
+            fontSizeInput.value = theme.fontSize;
+            borderRadiusInput.value = theme.borderRadius;
+
+            // Update preview styles immediately (including class for overrides)
+            updatePreviewStyle();
+        }
+
+        /**
+         * Updates the preview bubble's style based on current input values and selected theme class.
+         */
+        function updatePreviewStyle() {
+            const selectedThemeKey = themeSelect.value;
+            const theme = themes[selectedThemeKey];
+
+            // Remove previous theme classes to avoid conflicts
+            Object.keys(themes).forEach(key => {
+                if (themes[key].className) {
+                    previewBubble.classList.remove(themes[key].className);
+                }
+            });
+
+            // Add current theme class (if any) - this applies theme base styles from CSS
+            if (theme && theme.className) {
+                previewBubble.classList.add(theme.className);
+            }
+
+            // Apply manual overrides from inputs directly to the style attribute
+            // This allows customization *after* selecting a theme and ensures preview matches inputs.
+            const bgColor = bgColorInput.value;
+            const textColor = textColorInput.value;
+            const fontFamily = fontSelect.value;
+            const fontSize = `${fontSizeInput.value}px`;
+            const borderRadius = `${borderRadiusInput.value}rem`;
+
+            previewBubble.style.backgroundColor = bgColor;
+            previewBubble.style.color = textColor;
+            previewBubble.style.fontFamily = fontFamily;
+            previewBubble.style.fontSize = fontSize;
+            previewBubble.style.borderRadius = borderRadius;
+
+            // Update the tail color to match the final background color
+            // Use setTimeout to ensure the background color (potentially set by CSS class) is computed
+            setTimeout(() => {
+                 // Use getComputedStyle to get the color potentially set by the theme's CSS class
+                 const currentBgColor = window.getComputedStyle(previewBubble).backgroundColor;
+                 // Apply this computed color to the border (tail)
+                 previewBubble.style.borderTopColor = currentBgColor;
+            }, 0); // Timeout 0 forces it to wait for the next rendering cycle
+        }
+
+
+        /**
+         * Displays the next quote in the preview with animation.
+         */
+        function displayNextQuote() {
+            if (quotes.length === 0) {
+                previewText.textContent = 'Add some quotes!';
+                return;
+            }
+            // Add exit animation class
+            previewText.classList.add('quote-fade-exit-active');
+            previewText.classList.remove('quote-fade-enter-active', 'quote-fade-enter'); // Clean up previous enter classes
+
+             // Use setTimeout to change text after exit animation starts (duration matches CSS)
+            setTimeout(() => {
+                currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+                previewText.textContent = quotes[currentQuoteIndex];
+
+                 // Remove exit class and add enter classes after text update
+                 previewText.classList.remove('quote-fade-exit-active');
+                 previewText.classList.add('quote-fade-enter');
+
+                 // Force reflow before adding the active class for enter animation
+                 void previewText.offsetWidth; // Magic reflow trick
+
+                 previewText.classList.add('quote-fade-enter-active');
+
+            }, 500); // Match the CSS transition duration (0.5s)
+        }
+
+
+        /**
+         * Starts or restarts the quote cycling interval.
+         */
+        function startQuoteCycle() {
+            // Clear existing interval if any
+            if (cycleIntervalId) {
+                clearInterval(cycleIntervalId);
+                cycleIntervalId = null;
+            }
+
+            quotes = parseQuotes(); // Update quotes array
+            currentQuoteIndex = -1; // Reset index to start from the first quote on the next call
+
+            if (quotes.length > 0) {
+                // Display the first quote immediately without animation
+                currentQuoteIndex = 0;
+                previewText.textContent = quotes[currentQuoteIndex];
+                // Reset animation classes
+                previewText.className = ''; // Clear all animation classes initially
+
+
+                // Start the interval only if there's more than one quote
+                if (quotes.length > 1) {
+                     const duration = parseInt(cycleDurationInput.value, 10) * 1000; // Get duration in ms
+                     // Ensure duration is longer than the total animation time (fade out + fade in = 1s)
+                     if (duration >= 1000) {
+                         cycleIntervalId = setInterval(displayNextQuote, duration);
+                     } else {
+                         console.warn("Cycle duration should be at least 1 second for smooth animation.");
+                         // Still allow shorter, but might look jumpy
+                         cycleIntervalId = setInterval(displayNextQuote, Math.max(duration, 50)); // Prevent 0 or negative interval
+                     }
+                }
+            } else {
+                previewText.textContent = 'Add some quotes!';
+            }
+        }
+
+        /**
+         * Generates the self-contained HTML code for the OBS widget.
+         */
+        function generateWidgetCode() {
+            // Capture the final state from the input fields
+            const currentQuotes = parseQuotes();
+            const selectedThemeKey = themeSelect.value;
+            const bgColor = bgColorInput.value;
+            const textColor = textColorInput.value;
+            const fontFamily = fontSelect.value;
+            const fontSize = `${fontSizeInput.value}px`;
+            const borderRadius = `${borderRadiusInput.value}rem`;
+            const cycleDuration = parseInt(cycleDurationInput.value, 10) * 1000;
+
+            const quotesArrayString = JSON.stringify(currentQuotes);
+
+            // Determine if a Google Font link is needed for the generated code
+            let fontLink = '';
+            if (fontFamily.includes('Nunito')) {
+                fontLink = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">`;
+            } else if (fontFamily.includes('Inter')) {
+                 fontLink = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">`;
+            }
+            // Add more checks here if other Google Fonts are added to the builder
+
+            // Determine box-shadow and border based on theme/defaults
+            let boxStyle = `box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);`; // Default shadow
+            if (selectedThemeKey === 'theme-iphone') {
+                 boxStyle = `box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);`;
+            } else if (selectedThemeKey === 'theme-animal-crossing') {
+                 // Note: The border is applied via inline style here for simplicity,
+                 // matching how other styles are applied directly from inputs.
+                 boxStyle = `border: 2px solid #D3B87E; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);`;
+            }
+
+            // Construct the HTML code string
+            const htmlCode = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote Widget</title>
+    ${fontLink} {/* Include font link if necessary */}
+    <style>
+        /* Basic reset and body styling for OBS context */
+        body {
+            margin: 0;
+            padding: 10px; /* Provides space around the bubble */
+            background-color: transparent; /* Essential for OBS */
+            font-family: ${fontFamily}; /* Applied from builder */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 50px; /* Ensure body has some height */
+            overflow: hidden; /* Prevent scrollbars */
+        }
+        /* The main quote bubble */
+        #quote-bubble {
+            position: relative; /* For pseudo-element positioning */
+            background-color: ${bgColor}; /* Applied from builder */
+            color: ${textColor}; /* Applied from builder */
+            font-size: ${fontSize}; /* Applied from builder */
+            border-radius: ${borderRadius}; /* Applied from builder */
+            ${boxStyle} /* Apply shadow/border based on theme/defaults */
+            padding: 1rem; /* Standard padding */
+            text-align: center;
+            max-width: 90%; /* Limit width within the source bounds */
+            min-height: 30px; /* Minimum height */
+            display: inline-block; /* Allow bubble to size to content */
+            transition: all 0.5s ease-in-out; /* Smooth transitions (optional) */
+            overflow: hidden; /* Hide overflow during animation */
+        }
+        /* The chat bubble tail */
+        #quote-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px; /* Position below the bubble */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid ${bgColor}; /* Tail color matches background */
+        }
+        /* The text span inside the bubble */
+        #quote-text {
+             display: inline-block; /* Allows span to affect layout */
+             /* Transition for the fade effect */
+             transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+         /* Animation classes for fading text */
+        .quote-fade-enter { opacity: 0; transform: translateY(10px); }
+        .quote-fade-exit { opacity: 1; transform: translateY(0); }
+        .quote-fade-exit-active { opacity: 0; transform: translateY(-10px); }
+        .quote-fade-enter-active { opacity: 1; transform: translateY(0); transition-delay: 0.5s; } /* Delay enter */
+
+    </style>
+</head>
+<body>
+    <div id="quote-bubble">
+        <span id="quote-text"></span>
+    </div>
+
+    <script>
+        // Array of quotes (passed from the builder)
+        const quotes = ${quotesArrayString};
+        // DOM element for the text
+        const quoteTextElement = document.getElementById('quote-text');
+        // Cycle duration in milliseconds (passed from the builder)
+        const cycleDuration = ${cycleDuration};
+        // Index to track the current quote
+        let currentQuoteIndex = -1;
+
+        /**
+         * Displays the next quote with a fade animation.
+         */
+        function displayNextQuote() {
+            // Do nothing if there are no quotes
+            if (quotes.length === 0) return;
+
+            // Apply fade-out animation classes
+            quoteTextElement.classList.add('quote-fade-exit-active');
+            quoteTextElement.classList.remove('quote-fade-enter-active', 'quote-fade-enter');
+
+            // Wait for fade-out animation to progress before changing text
+            setTimeout(() => {
+                 // Cycle to the next quote index
+                 currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+                 // Update the text content
+                 quoteTextElement.textContent = quotes[currentQuoteIndex];
+
+                 // Apply fade-in animation classes
+                 quoteTextElement.classList.remove('quote-fade-exit-active');
+                 quoteTextElement.classList.add('quote-fade-enter');
+                 // Force browser reflow to ensure animation restarts correctly
+                 void quoteTextElement.offsetWidth;
+                 quoteTextElement.classList.add('quote-fade-enter-active');
+             }, 500); // Duration matches the CSS transition time (0.5s)
+        }
+
+        // --- Initial Setup ---
+        if (quotes.length > 0) {
+            // Display the first quote immediately on load
+            currentQuoteIndex = 0;
+            quoteTextElement.textContent = quotes[0];
+
+            // Start the cycling interval only if there's more than one quote
+            // and the duration is long enough for the animation
+            if (quotes.length > 1 && cycleDuration >= 1000) {
+                 setInterval(displayNextQuote, cycleDuration);
+            } else if (quotes.length === 1) {
+                 // Only one quote, no need to cycle
+                 console.log("Only one quote provided. No cycling needed.");
+            } else if (cycleDuration < 1000) {
+                 console.warn("Cycle duration is less than 1 second, animation might appear abrupt.");
+                 // Still set interval if duration > 0, even if short
+                 if(cycleDuration > 0) setInterval(displayNextQuote, cycleDuration);
+            }
+        } else {
+            // Display a message if no quotes were configured
+            quoteTextElement.textContent = 'No quotes configured.';
+        }
+    <\/script> {/* Escaped closing script tag */}
+</body>
+</html>`; // End of htmlCode string
+
+            // Display the generated code in the textarea
+            generatedCodeTextarea.value = htmlCode;
+            showStatusMessage("Widget code generated!"); // Provide feedback
+        }
+
+        /**
+         * Saves the current configuration to a JSON file.
+         */
+        function saveConfiguration() {
+            // Gather all configuration values from the inputs
+            currentConfig = {
+                theme: themeSelect.value, // Save selected theme key
+                quotes: quotesInput.value,
+                bgColor: bgColorInput.value,
+                textColor: textColorInput.value,
+                fontFamily: fontSelect.value,
+                fontSize: fontSizeInput.value,
+                borderRadius: borderRadiusInput.value,
+                cycleDuration: cycleDurationInput.value
+            };
+            // Convert the configuration object to a JSON string
+            const configString = JSON.stringify(currentConfig, null, 2); // Pretty print JSON
+            // Create a Blob object containing the JSON data
+            const blob = new Blob([configString], { type: 'application/json' });
+            // Create a temporary URL for the Blob
+            const url = URL.createObjectURL(blob);
+            // Create a temporary anchor element for downloading
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'obs-quote-widget-config.json'; // Set the filename
+            // Append the anchor to the body, click it to trigger download, then remove it
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            // Revoke the temporary URL to free up resources
+            URL.revokeObjectURL(url);
+            showStatusMessage('Configuration saved!'); // Use status message instead of alert
+        }
+
+         /**
+         * Loads configuration from a selected JSON file.
+         * @param {Event} event - The file input change event.
+         */
+        function loadConfiguration(event) {
+            const file = event.target.files[0];
+            // Basic validation for file existence and type
+            if (!file || file.type !== 'application/json') {
+                showStatusMessage('Please select a valid .json configuration file.', true); // Error message
+                loadConfigInput.value = null; // Reset file input
+                return;
+            }
+
+            const reader = new FileReader();
+            // Define what happens when the file is successfully read
+            reader.onload = function(e) {
+                try {
+                    // Parse the JSON content from the file
+                    const loadedConfig = JSON.parse(e.target.result);
+
+                    // Validate the basic structure of the loaded object
+                    if (!loadedConfig || typeof loadedConfig !== 'object') {
+                         throw new Error("Invalid configuration format.");
+                    }
+
+                    // Load theme first (if present in the config)
+                    if (loadedConfig.theme && themes[loadedConfig.theme]) {
+                        themeSelect.value = loadedConfig.theme;
+                        // Apply theme defaults BEFORE applying specific saved values
+                        // This ensures the inputs reflect the theme's base
+                        applyTheme(loadedConfig.theme);
+                    } else {
+                         themeSelect.value = 'default'; // Fallback to default if theme is missing/invalid
+                         applyTheme('default');
+                    }
+
+                    // Load specific values from the config, allowing overrides of the loaded theme.
+                    // Use nullish coalescing (??) to fall back to current input value (already set by theme) if a key is missing in the JSON.
+                    quotesInput.value = loadedConfig.quotes ?? quotesInput.value;
+                    bgColorInput.value = loadedConfig.bgColor ?? bgColorInput.value;
+                    textColorInput.value = loadedConfig.textColor ?? textColorInput.value;
+                    fontSelect.value = loadedConfig.fontFamily ?? fontSelect.value;
+                    fontSizeInput.value = loadedConfig.fontSize ?? fontSizeInput.value;
+                    borderRadiusInput.value = loadedConfig.borderRadius ?? borderRadiusInput.value;
+                    cycleDurationInput.value = loadedConfig.cycleDuration ?? cycleDurationInput.value;
+
+
+                    // Update preview and restart quote cycle after loading all settings
+                    updatePreviewStyle();
+                    startQuoteCycle();
+                    showStatusMessage('Configuration loaded successfully!'); // Success feedback
+
+                } catch (error) {
+                    // Handle errors during parsing or validation
+                    console.error("Error loading configuration:", error);
+                    showStatusMessage(`Error loading config: ${error.message}`, true); // Show error to user
+                    // Optional: Reset to default theme on error?
+                    // themeSelect.value = 'default';
+                    // applyTheme('default');
+                    // updatePreviewStyle();
+                    // startQuoteCycle();
+                } finally {
+                     // Reset file input value regardless of success/failure
+                     // This allows loading the same file again if needed
+                     loadConfigInput.value = null;
+                }
+            };
+            // Define what happens if there's an error reading the file
+            reader.onerror = function() {
+                 showStatusMessage('Error reading file.', true); // Show read error
+                 loadConfigInput.value = null; // Reset file input
+            };
+            // Start reading the file as text
+            reader.readAsText(file);
+        }
+
+        /**
+         * Copies the generated code from the textarea to the clipboard.
+         */
+        function copyGeneratedCode() {
+            // Check if there is code to copy
+            if (!generatedCodeTextarea.value) {
+                showStatusMessage("No code generated yet!", true); // Error feedback
+                return;
+            }
+            // Use the modern Clipboard API
+            navigator.clipboard.writeText(generatedCodeTextarea.value)
+                .then(() => {
+                    showStatusMessage("Code copied to clipboard!"); // Success feedback
+                })
+                .catch(err => {
+                    // Handle potential errors (e.g., browser doesn't support API, permissions)
+                    console.error('Failed to copy code using Clipboard API: ', err);
+                    // Fallback for older browsers or if API fails
+                     try {
+                         generatedCodeTextarea.select(); // Select the text
+                         document.execCommand('copy'); // Try the deprecated method
+                         showStatusMessage("Code copied (using fallback)!");
+                     } catch (execErr) {
+                         console.error('Fallback copy method failed:', execErr);
+                         showStatusMessage("Failed to copy code automatically. Please copy manually.", true);
+                     }
+                });
+        }
+
+
+        // --- Event Listeners ---
+        // Update preview or restart cycle when inputs change
+
+        themeSelect.addEventListener('change', (e) => {
+            applyTheme(e.target.value); // Apply theme defaults first
+            startQuoteCycle(); // Restart cycle as theme might change timing perception or content size
+        });
+
+        quotesInput.addEventListener('input', startQuoteCycle); // Quotes change -> restart cycle
+
+        // Any visual style change should update the preview
+        bgColorInput.addEventListener('input', updatePreviewStyle);
+        textColorInput.addEventListener('input', updatePreviewStyle);
+        fontSelect.addEventListener('change', updatePreviewStyle);
+        fontSizeInput.addEventListener('input', updatePreviewStyle);
+        borderRadiusInput.addEventListener('input', updatePreviewStyle);
+
+        cycleDurationInput.addEventListener('change', startQuoteCycle); // Duration change -> restart cycle
+
+        // Button actions
+        generateCodeButton.addEventListener('click', generateWidgetCode);
+        saveConfigButton.addEventListener('click', saveConfiguration);
+        loadConfigInput.addEventListener('change', loadConfiguration); // Listener on the hidden file input
+        copyCodeButton.addEventListener('click', copyGeneratedCode);
+
+
+        // --- Initial Setup ---
+        applyTheme('default'); // Apply default theme settings to inputs on page load
+        startQuoteCycle(); // Start cycle with default/empty quotes
+
+    </script>
+
+</body>
+</html>
